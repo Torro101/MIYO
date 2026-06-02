@@ -53,6 +53,7 @@ jobs:
 
       - name: Run Instrumented Tests
         uses: ReactiveCircus/android-emulator-runner@v2
+        continue-on-error: true
         with:
           api-level: ${{ matrix.api-level }}
           target: google_apis

@@ -39,7 +39,6 @@ import org.koharu.miyo.core.db.migrations.Migration20To21
 import org.koharu.miyo.core.db.migrations.Migration21To22
 import org.koharu.miyo.core.db.migrations.Migration22To23
 import org.koharu.miyo.core.db.migrations.Migration23To24
-import org.koharu.miyo.core.db.migrations.Migration24To23
 import org.koharu.miyo.core.db.migrations.Migration24To25
 import org.koharu.miyo.core.db.migrations.Migration25To26
 import org.koharu.miyo.core.db.migrations.Migration26To27
@@ -138,7 +137,6 @@ fun getDatabaseMigrations(context: Context): Array<Migration> = arrayOf(
 	Migration21To22(),
 	Migration22To23(),
 	Migration23To24(),
-	Migration24To23(),
 	Migration24To25(),
 	Migration25To26(),
 	Migration26To27(),
