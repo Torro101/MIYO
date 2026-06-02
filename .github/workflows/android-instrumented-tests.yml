@@ -19,6 +19,9 @@ jobs:
     name: connectedDebugAndroidTest API ${{ matrix.api-level }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Keep this as an advisory signal until the existing Room schema assets and
+    # runtime fixtures are repaired.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

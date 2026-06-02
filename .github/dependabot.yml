@@ -22,6 +22,17 @@ updates:
           - "com.squareup.*"
           - "org.jsoup:*"
           - "com.github.YakaTeam:*"
+    ignore:
+      # gradle/libs.versions.toml documents crashes on Android 5/A5-class
+      # devices with Coil 3.4.0. Keep the pin until that path is validated.
+      - dependency-name: "io.coil-kt.coil3:coil-core"
+        versions: [ "3.4.0" ]
+      - dependency-name: "io.coil-kt.coil3:coil-gif"
+        versions: [ "3.4.0" ]
+      - dependency-name: "io.coil-kt.coil3:coil-network-okhttp"
+        versions: [ "3.4.0" ]
+      - dependency-name: "io.coil-kt.coil3:coil-svg"
+        versions: [ "3.4.0" ]
 
   - package-ecosystem: github-actions
     directory: /
