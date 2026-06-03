@@ -33,9 +33,6 @@
 __pycache__/
 *.pyc
 
-# Local agent scratch/worktree files
-.claude/
-CLAUDE.md
 
 # Beads / Dolt files (added by bd init)
 .dolt/
