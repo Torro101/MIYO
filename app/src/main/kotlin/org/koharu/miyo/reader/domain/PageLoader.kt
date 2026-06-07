@@ -263,14 +263,24 @@ class PageLoader @Inject constructor(
 				cache.set(cacheKey, image).toUri()
 			}
 		} else {
-			val file = uri.toFile()
-			runInterruptible(Dispatchers.IO) {
-				context.ensureRamAtLeast(file.estimateDecodeMemoryBytes())
-				BitmapDecoderCompat.decode(file)
-			}.use { image ->
-				image.compressToPNG(file)
+			// For a plain file URI, write the converted PNG to a NEW cache
+			// entry (not back to the source) so the original is preserved and
+			// the conversion works even when the source lives in read-only
+			// storage (e.g. SAF tree the user only granted read access to).
+			val cacheKey = convertedFileCacheKey(uri)
+			cache.get(cacheKey)?.let { file ->
+				if (file.isUsablePageCache()) {
+					return@withLock file.toUri()
+				}
+				cache.remove(cacheKey)
 			}
-			uri
+			val source = uri.toFile()
+			runInterruptible(Dispatchers.IO) {
+				context.ensureRamAtLeast(source.estimateDecodeMemoryBytes())
+				BitmapDecoderCompat.decode(source)
+			}.use { image ->
+				cache.set(cacheKey, image).toUri()
+			}
 		}
 	}
 
@@ -545,6 +555,8 @@ class PageLoader @Inject constructor(
 		private fun rawZipCacheKey(uri: Uri) = "zip-entry:$uri"
 
 		private fun convertedZipCacheKey(uri: Uri) = "zip-converted:$uri"
+
+		private fun convertedFileCacheKey(uri: Uri) = "file-converted:$uri"
 
 		fun createPageRequest(pageUrl: String, mangaSource: MangaSource) = Request.Builder()
 			.url(pageUrl)

@@ -36,13 +36,16 @@ class WebtoonHolder(
 	override fun onReady() {
 		binding.ssiv.colorFilter = settings.colorFilter?.toColorFilter()
 		with(binding.ssiv) {
-			scrollTo(
-				when {
-					scrollToRestore != 0 -> scrollToRestore
-					itemView.top < 0 -> getScrollRange()
-					else -> 0
-				},
-			)
+			// Always prefer the saved scroll position when it is non-zero;
+			// itemView.top is usually 0 for a freshly bound holder at the top
+			// of the RecyclerView, so the old `else -> 0` branch overwrote
+			// the saved scroll for nearly every page.
+			val target = when {
+				scrollToRestore != 0 -> scrollToRestore
+				!isReady -> 0
+				else -> 0
+			}
+			scrollTo(target)
 			scrollToRestore = 0
 		}
 	}

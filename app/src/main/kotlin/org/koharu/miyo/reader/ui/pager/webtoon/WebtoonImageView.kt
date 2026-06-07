@@ -29,6 +29,9 @@ class WebtoonImageView @JvmOverloads constructor(
 	}
 
 	fun scrollBy(delta: Int) {
+		if (!isReady || sWidth == 0 || sHeight == 0) {
+			return
+		}
 		val maxScroll = getScrollRange()
 		if (maxScroll == 0) {
 			return
@@ -38,6 +41,10 @@ class WebtoonImageView @JvmOverloads constructor(
 	}
 
 	fun scrollTo(y: Int) {
+		if (!isReady || sWidth == 0 || sHeight == 0) {
+			// Defer: caller will retry once the image is decoded.
+			return
+		}
 		val maxScroll = getScrollRange()
 		if (maxScroll == 0) {
 			scrollToInternal(0)
@@ -49,10 +56,15 @@ class WebtoonImageView @JvmOverloads constructor(
 	fun getScroll() = scrollPos
 
 	fun getScrollRange(): Int {
-		if (!isReady) {
+		if (!isReady || sWidth == 0 || sHeight == 0 || width == 0) {
 			return 0
 		}
 		val totalHeight = (sHeight * width / sWidth.toFloat()).roundToInt()
+		// roundToInt() can saturate to Int.MAX_VALUE for absurdly large
+		// sHeight; clamp negatives and the saturation sentinel.
+		if (totalHeight <= 0 || totalHeight == Int.MAX_VALUE) {
+			return 0
+		}
 		return (totalHeight - height).coerceAtLeast(0)
 	}
 
@@ -110,16 +122,33 @@ class WebtoonImageView @JvmOverloads constructor(
 	}
 
 	private fun scrollToInternal(pos: Int) {
-		minScale = width / sWidth.toFloat()
-		maxScale = minScale
+		// Callers must ensure sWidth/sHeight > 0 before invoking this. We
+		// guard again here so any future caller cannot produce NaN/Infinity
+		// for minScale and crash setScaleAndCenter.
+		if (sWidth == 0 || sHeight == 0 || width == 0 || height == 0) {
+			return
+		}
+		val scale = width / sWidth.toFloat()
+		if (!scale.isFinite() || scale <= 0f) {
+			return
+		}
+		minScale = scale
+		maxScale = scale
 		scrollPos = pos
-		ct.set(sWidth / 2f, (height / 2f + pos.toFloat()) / minScale)
-		setScaleAndCenter(minScale, ct)
+		ct.set(sWidth / 2f, (height / 2f + pos.toFloat()) / scale)
+		setScaleAndCenter(scale, ct)
 	}
 
 	private fun adjustScale() {
-		minScale = width / sWidth.toFloat()
-		maxScale = minScale
+		if (sWidth == 0 || sHeight == 0 || width == 0 || height == 0) {
+			return
+		}
+		val scale = width / sWidth.toFloat()
+		if (!scale.isFinite() || scale <= 0f) {
+			return
+		}
+		minScale = scale
+		maxScale = scale
 		minimumScaleType = SCALE_TYPE_CUSTOM
 		requestLayout()
 	}

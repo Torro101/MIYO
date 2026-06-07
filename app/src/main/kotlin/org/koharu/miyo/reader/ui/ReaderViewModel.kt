@@ -341,6 +341,12 @@ class ReaderViewModel @Inject constructor(
         val pages = content.value.pages // capture immediately
         val centerPos = (lowerPos + upperPos) / 2
         val capturedPage = pages.getOrNull(centerPos)
+        // Capture the visible window relative to the captured center, so the
+        // relative position around the page is preserved even when the page
+        // list changes (chapter switch) between the main-thread capture and
+        // the post-join recompute below.
+        val visibleBeforeCapture = (centerPos - lowerPos).coerceAtLeast(0)
+        val visibleAfterCapture = (upperPos - centerPos).coerceAtLeast(0)
         stateChangeJob = launchJob(Dispatchers.Default) {
             prevJob?.cancelAndJoin()
             loadingJob?.join()
@@ -361,10 +367,13 @@ class ReaderViewModel @Inject constructor(
                 return@launchJob
             }
             ensureActive()
-            val visibleBefore = (centerPos - lowerPos).coerceAtLeast(0)
-            val visibleAfter = (upperPos - centerPos).coerceAtLeast(0)
+            // Clamp the captured window to the post-join page list size so we
+            // never try to read or prefetch past the end after a chapter shrink.
+            val lastIndex = currentPages.lastIndex
+            val visibleBefore = visibleBeforeCapture.coerceAtMost(resolvedCenterPos)
+            val visibleAfter = visibleAfterCapture.coerceAtMost(lastIndex - resolvedCenterPos)
             val resolvedLowerPos = (resolvedCenterPos - visibleBefore).coerceAtLeast(0)
-            val resolvedUpperPos = (resolvedCenterPos + visibleAfter).coerceAtMost(currentPages.lastIndex)
+            val resolvedUpperPos = (resolvedCenterPos + visibleAfter).coerceAtMost(lastIndex)
             val autoLoadAllowed = readerMode.value != ReaderMode.WEBTOON || !isWebtoonPullGestureEnabled.value
             if (autoLoadAllowed) {
                 if (resolvedUpperPos >= currentPages.lastIndex - BOUNDS_PAGE_OFFSET) {

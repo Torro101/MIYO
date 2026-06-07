@@ -11,10 +11,9 @@ import androidx.documentfile.provider.DocumentFile
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.IOException
@@ -41,7 +40,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.inject.Provider
-import kotlin.coroutines.resume
 
 class PageSaveHelper @AssistedInject constructor(
 	@Assisted activityResultCaller: ActivityResultCaller,
@@ -53,15 +51,20 @@ class PageSaveHelper @AssistedInject constructor(
 	private val savePageRequest = activityResultCaller.registerForActivityResult(PageSaveContract(), this)
 	private val pickDirectoryRequest = OpenDocumentTreeHelper(activityResultCaller, this)
 
-	private var continuation: CancellableContinuation<Uri>? = null
+	// Channel-based handoff for activity results. A single mutable continuation
+	// raced when two save flows were active simultaneously (single save and
+	// multi-save, or two concurrent single saves), leaving the earlier caller
+	// hung forever. Each launch installs a fresh channel and the callback
+	// delivers the result to whichever channel currently owns the slot.
+	private data class PendingRequest(val channel: Channel<Uri?>, val expectsResult: Boolean)
+	private var pending: PendingRequest? = null
 
 	override fun onActivityResult(result: Uri?) {
-		continuation?.also { cont ->
-			if (result != null) {
-				cont.resume(result)
-			} else {
-				cont.cancel()
-			}
+		val current = pending ?: return
+		pending = null
+		if (current.expectsResult) {
+			// Use trySend with UNLIMITED buffer; offer is not needed.
+			current.channel.trySend(result)
 		}
 	}
 
@@ -133,16 +136,24 @@ class PageSaveHelper @AssistedInject constructor(
 	}
 
 	private suspend fun <I> ActivityResultLauncher<I>.launchAndAwait(input: I): Uri {
-		continuation?.cancel()
-		return withContext(Dispatchers.Main) {
-			try {
-				suspendCancellableCoroutine { cont ->
-					continuation = cont
-					launch(input)
-				}
-			} finally {
-				continuation = null
+		val channel = Channel<Uri?>(capacity = Channel.BUFFERED)
+		// If a previous request is still pending, cancel it before installing
+		// our own channel so the callback cannot deliver the new result to
+		// the wrong caller.
+		pending?.channel?.trySend(null)
+		pending = PendingRequest(channel, expectsResult = true)
+		try {
+			return withContext(Dispatchers.Main) {
+				launch(input)
+				val result = channel.receive()
+					?: throw IOException("No result returned for input=$input")
+				result
 			}
+		} finally {
+			if (pending?.channel === channel) {
+				pending = null
+			}
+			channel.close()
 		}
 	}
 
@@ -195,8 +206,13 @@ class PageSaveHelper @AssistedInject constructor(
 		fun getFileBaseName() = buildString {
 			append(manga.title.toFileNameSafe().take(MAX_BASENAME_LENGTH))
 			manga.findChapterById(chapterId)?.let { chapter ->
+				val safeChapterNumber = chapter.number
+					.toString()
+					.toFileNameSafe()
+					.ifBlank { "ch$chapterId" }
+					.take(MAX_CHAPTER_LENGTH)
 				append('-')
-				append(chapter.number)
+				append(safeChapterNumber)
 			}
 			append('-')
 			append(pageNumber)
@@ -214,6 +230,7 @@ class PageSaveHelper @AssistedInject constructor(
 	private companion object {
 
 		private const val MAX_BASENAME_LENGTH = 12
+		private const val MAX_CHAPTER_LENGTH = 24
 		private const val EXTENSION_FALLBACK = "png"
 		private const val TEMP_DIR = "pages"
 	}

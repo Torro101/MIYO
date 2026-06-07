@@ -13,6 +13,14 @@ object PluginFileLoader {
 	private const val DIR_NAME = "plugins"
 	private const val PARTIAL_SUFFIX = ".partial"
 
+	/**
+	 * Maximum size of a plugin JAR accepted from an external source. Plugins
+	 * distributed via the in-app catalog are well under this limit; this cap
+	 * primarily prevents a maliciously crafted "plugin" from exhausting disk
+	 * space. 64 MB is generous — real Kotatsu-style parsers are < 5 MB.
+	 */
+	const val MAX_PLUGIN_BYTES: Long = 64L * 1024L * 1024L
+
 	fun pluginsDir(context: Context): File =
 		File(context.filesDir, DIR_NAME).also { it.mkdirs() }
 
@@ -33,7 +41,19 @@ object PluginFileLoader {
 			if (partial.exists() && !partial.delete()) throw IOException()
 			input.use { stream ->
 				partial.outputStream().use { out ->
-					stream.copyTo(out)
+					// Cap the copied size. A plugin > MAX_PLUGIN_BYTES is
+					// almost certainly malicious or corrupt.
+					var copied = 0L
+					val buf = ByteArray(64 * 1024)
+					while (true) {
+						val n = stream.read(buf)
+						if (n < 0) break
+						copied += n
+						if (copied > MAX_PLUGIN_BYTES) {
+							throw IOException("Plugin exceeds ${MAX_PLUGIN_BYTES / 1024 / 1024} MB limit")
+						}
+						out.write(buf, 0, n)
+					}
 					out.flush()
 				}
 			}

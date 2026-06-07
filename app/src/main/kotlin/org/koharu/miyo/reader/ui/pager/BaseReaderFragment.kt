@@ -5,6 +5,7 @@ import android.view.View
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.activityViewModels
 import androidx.viewbinding.ViewBinding
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import org.koharu.miyo.core.prefs.ReaderAnimation
 import org.koharu.miyo.core.ui.BaseFragment
 import org.koharu.miyo.core.ui.widgets.ZoomControl
@@ -24,28 +25,35 @@ abstract class BaseReaderFragment<B : ViewBinding> : BaseFragment<B>(), ZoomCont
 		super.onViewBindingCreated(binding, savedInstanceState)
 		readerAdapter = onCreateAdapter()
 
-		viewModel.content.observe(viewLifecycleOwner) {
-			// Determine which state to use for restoring position:
-			// - content.state: explicitly set state (e.g., after mode switch or chapter change)
-			// - getCurrentState(): current reading position saved in SavedStateHandle
-			val currentState = viewModel.getCurrentState()
-			val pendingState = when {
-				// If content.state is null and we have pages, use getCurrentState
-				it.state == null
-					&& it.pages.isNotEmpty()
-					&& readerAdapter?.hasItems != true -> currentState
+		// Suppress re-emission when the same page list and state are produced
+		// twice in a row (e.g. a reload() that re-publishes identical content).
+		// Without this guard the adapter is reset and the user's scroll is
+		// dropped, which the user perceives as the reader "snapping back" to
+		// the first page after every settings or history update.
+		viewModel.content
+			.distinctUntilChangedBy { listOf(it.pages, it.state) }
+			.observe(viewLifecycleOwner) {
+				// Determine which state to use for restoring position:
+				// - content.state: explicitly set state (e.g., after mode switch or chapter change)
+				// - getCurrentState(): current reading position saved in SavedStateHandle
+				val currentState = viewModel.getCurrentState()
+				val pendingState = when {
+					// If content.state is null and we have pages, use getCurrentState
+					it.state == null
+						&& it.pages.isNotEmpty()
+						&& readerAdapter?.hasItems != true -> currentState
 
-				// use currentState only if it matches the current pages (to avoid the error message)
-				readerAdapter?.hasItems != true
-					&& it.state != currentState
-					&& currentState != null
-					&& it.pages.any { page -> page.chapterId == currentState.chapterId } -> currentState
+					// use currentState only if it matches the current pages (to avoid the error message)
+					readerAdapter?.hasItems != true
+						&& it.state != currentState
+						&& currentState != null
+						&& it.pages.any { page -> page.chapterId == currentState.chapterId } -> currentState
 
-				// Otherwise, use content.state (normal flow, mode switch, chapter change)
-				else -> it.state
+					// Otherwise, use content.state (normal flow, mode switch, chapter change)
+					else -> it.state
+				}
+				onPagesChanged(it.pages, pendingState)
 			}
-			onPagesChanged(it.pages, pendingState)
-		}
 	}
 
 	override fun onApplyWindowInsets(v: View, insets: WindowInsetsCompat): WindowInsetsCompat = insets

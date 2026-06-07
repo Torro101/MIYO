@@ -119,8 +119,28 @@ class ReaderActivity :
     // Tracks whether the foldable device is in an unfolded state (half-opened or flat)
     private var isFoldUnfolded: Boolean = false
 
+    /**
+     * The last reader mode the activity actually committed to the fragment
+     * container. Used to suppress spurious [ReaderManager.replace] calls when
+     * a configuration change recreates the activity and the [ReaderViewModel]
+     * emits the same mode it had before — without this, the activity would
+     * destroy the freshly-recreated reader fragment and replace it with an
+     * identical one, causing a visible "loading…" flash on rotation.
+     *
+     * Persisted in [onSaveInstanceState] because the value must survive the
+     * activity being recreated; a plain instance field would reset to null on
+     * rotation and the guard would be a no-op.
+     */
+    private var lastCommittedMode: ReaderMode? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Restore lastCommittedMode before the first readerMode emission can
+        // reach onInitReader — the value must survive configuration change,
+        // and a plain instance field would reset to null on rotation.
+        savedInstanceState?.getString(KEY_LAST_COMMITTED_MODE)?.let { name ->
+            lastCommittedMode = runCatching { ReaderMode.valueOf(name) }.getOrNull()
+        }
         setContentView(ActivityReaderBinding.inflate(layoutInflater))
         readerManager = ReaderManager(supportFragmentManager, viewBinding.container, settings)
         setDisplayHomeAsUp(isEnabled = true, showUpAsClose = false)
@@ -226,6 +246,11 @@ class ReaderActivity :
         viewModel.onStop()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        lastCommittedMode?.let { outState.putString(KEY_LAST_COMMITTED_MODE, it.name) }
+    }
+
     override fun onProvideAssistContent(outContent: AssistContent) {
 		super.onProvideAssistContent(outContent)
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -262,9 +287,14 @@ class ReaderActivity :
         if (mode == null) {
             return
         }
-        if (readerManager.currentMode != mode) {
+        // Compare against the last mode we actually committed. After a
+        // configuration change, the new ReaderViewModel may emit the same
+        // mode it had before rotation; recreating the fragment in that
+        // case is wasteful and produces a visible flash.
+        if (readerManager.currentMode != mode && lastCommittedMode != mode) {
             readerManager.replace(mode)
         }
+        lastCommittedMode = mode
         if (viewBinding.appbarTop.isVisible) {
             lifecycle.postDelayed(TimeUnit.SECONDS.toMillis(1), hideUiRunnable)
         }
@@ -393,12 +423,22 @@ class ReaderActivity :
             val isFullscreen = settings.isReaderFullscreenEnabled
             viewBinding.appbarTop.isVisible = isUiVisible
             viewBinding.toolbarDocked?.isVisible = isUiVisible
-            viewBinding.infoBar.isGone = isUiVisible || (!viewModel.isInfoBarEnabled.value)
+            // Single source of truth: the info bar is visible only when the
+            // top app bar is hidden AND the user has not disabled it via
+            // settings. Centralizing this here prevents [onReaderBarChanged]
+            // and this function from racing on infoBar.visibility.
+            applyInfoBarVisibility()
             viewBinding.infoBar.isTimeVisible = isFullscreen
             updateScrollTimerButton()
             systemUiController.setSystemUiVisible(isUiVisible || !isFullscreen)
             viewBinding.root.requestApplyInsets()
         }
+    }
+
+    private fun applyInfoBarVisibility() {
+        val infoBarEnabled = viewModel.isInfoBarEnabled.value
+        val shouldShow = infoBarEnabled && viewBinding.appbarTop.isGone
+        viewBinding.infoBar.isVisible = shouldShow
     }
 
     override fun onApplyWindowInsets(v: View, insets: WindowInsetsCompat): WindowInsetsCompat {
@@ -495,8 +535,10 @@ class ReaderActivity :
         onPageSelected(ReaderPage(page, index, chapterId))
     }
 
-    private fun onReaderBarChanged(isBarEnabled: Boolean) {
-        viewBinding.infoBar.isVisible = isBarEnabled && viewBinding.appbarTop.isGone
+    private fun onReaderBarChanged(@Suppress("UNUSED_PARAMETER") isBarEnabled: Boolean) {
+        // Delegate to the central visibility helper so the info bar is set
+        // from one place only.
+        applyInfoBarVisibility()
     }
 
     private fun onUiStateChanged(pair: Pair<ReaderUiState?, ReaderUiState?>) {
@@ -592,5 +634,6 @@ class ReaderActivity :
     companion object {
 
         private const val TOAST_DURATION = 2000L
+        private const val KEY_LAST_COMMITTED_MODE = "last_committed_mode"
     }
 }

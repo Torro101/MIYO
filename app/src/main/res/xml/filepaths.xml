@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-	<!-- https://issuetracker.google.com/issues/37125252 -->
-	<!--suppress AndroidElementNotAllowed -->
-	<root-path
-		name="root"
+	<!--
+		Restricted FileProvider paths. Do NOT add <root-path>, <external-path>, or
+		<external-files-path> with `path="."` — these would expose the entire
+		filesystem via content:// URIs once FLAG_GRANT_READ_URI_PERMISSION is
+		granted to another app. Only expose the concrete subdirectories the app
+		actually shares with other apps.
+	-->
+
+	<!-- Internal cache: page cache, image cache, ad-block list, http subcache. -->
+	<cache-path
+		name="cache"
+		path="." />
+
+	<!-- Internal files: installed plugins (jar), bundled model. -->
+	<files-path
+		name="files"
+		path="." />
+
+	<!-- External (scoped) app-specific cache. Used by LocalStorageCache fallback. -->
+	<external-cache-path
+		name="external_cache"
+		path="." />
+
+	<!-- External (scoped) app-specific files. Used for saved pages, backup staging, covers. -->
+	<external-files-path
+		name="external_files"
 		path="." />
 </paths>

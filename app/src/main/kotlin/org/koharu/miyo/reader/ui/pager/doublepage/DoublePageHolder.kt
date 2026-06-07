@@ -43,12 +43,19 @@ class DoublePageHolder(
 	}
 
 	override fun onReady() {
-		with(binding.ssiv) {
+		val ssiv = binding.ssiv
+		ssiv.colorFilter = settings.colorFilter?.toColorFilter()
+
+		// Guard against onReady firing with sWidth/sHeight == 0 (recycled
+		// state). Without this guard the divisions produce Infinity/NaN.
+		if (ssiv.sWidth <= 0 || ssiv.sHeight <= 0 || ssiv.width <= 0 || ssiv.height <= 0) {
+			return
+		}
+		with(ssiv) {
 			maxScale = 2f * maxOf(
 				width / sWidth.toFloat(),
 				height / sHeight.toFloat(),
 			)
-			binding.ssiv.colorFilter = settings.colorFilter?.toColorFilter()
 			minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
 			setScaleAndCenter(
 				minScale,

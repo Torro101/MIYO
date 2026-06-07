@@ -144,8 +144,25 @@ class DownloadWorker @AssistedInject constructor(
 
 	@Volatile
 	private var lastPublishedState: DownloadState? = null
+
+	/**
+	 * Nullable view of the last published state, used by [getForegroundInfo]
+	 * and the notification factory. Returns `null` if [doWork] has not yet
+	 * initialized it (e.g. when WorkManager invokes [getForegroundInfo] before
+	 * [doWork] starts). The notification factory renders a "preparing…"
+	 * placeholder when state is null, so this MUST NOT throw.
+	 */
+	private val currentStateOrNull: DownloadState?
+		get() = lastPublishedState
+
+	/**
+	 * Non-nullable accessor for the work loop. Callers must be inside [doWork]
+	 * after the first [publishState] has run.
+	 */
 	private val currentState: DownloadState
-		get() = checkNotNull(lastPublishedState)
+		get() = checkNotNull(lastPublishedState) {
+			"currentState must be accessed only after publishState() has run"
+		}
 
 	private val etaEstimator = RealtimeEtaEstimator()
 	private val notificationThrottler = Throttler(400)
@@ -221,6 +238,13 @@ class DownloadWorker @AssistedInject constructor(
 		var manga = subject
 		val chaptersToSkip = excludedIds.toMutableSet()
 		val pausingReceiver = PausingReceiver(id, PausingHandle.current())
+		// Track whether the receiver was actually registered so the unregister
+		// call in the finally block is a no-op when registration failed or was
+		// already torn down. Without this flag, exceptions thrown before
+		// registerReceiver (or after a previous unregister) cause
+		// IllegalArgumentException: Receiver not registered, which propagates
+		// out of withContext(NonCancellable) and crashes the worker.
+		var pausingReceiverRegistered = false
 		mangaLock.withLock(manga) {
 			ContextCompat.registerReceiver(
 				applicationContext,
@@ -228,6 +252,7 @@ class DownloadWorker @AssistedInject constructor(
 				PausingReceiver.createIntentFilter(id),
 				ContextCompat.RECEIVER_NOT_EXPORTED,
 			)
+			pausingReceiverRegistered = true
 			val destination = localMangaRepository.getOutputDir(manga, task.destination)
 			checkNotNull(destination) { applicationContext.getString(R.string.cannot_find_available_storage) }
 			var output: LocalMangaOutput? = null
@@ -333,11 +358,15 @@ class DownloadWorker @AssistedInject constructor(
 								checkIsPaused()
 								pageQueue.send(IndexedValue(pageIndex, page))
 							}
-							pageQueue.close()
-							workers.joinAll()
 						} finally {
+							// Single close site: closes the channel after the
+							// producer loop ends, whether normally or via an
+							// exception. Double-closing a Channel raises
+							// ClosedSendChannelException, so we must not also
+							// close on the happy path.
 							pageQueue.close()
 						}
+						workers.joinAll()
 					}.map { event ->
 						when (event) {
 							is PageDownloadEvent.Success -> {
@@ -431,7 +460,12 @@ class DownloadWorker @AssistedInject constructor(
 				throw e
 			} finally {
 				withContext(NonCancellable) {
-					applicationContext.unregisterReceiver(pausingReceiver)
+					if (pausingReceiverRegistered) {
+						runCatching {
+							applicationContext.unregisterReceiver(pausingReceiver)
+						}
+						pausingReceiverRegistered = false
+					}
 					output?.closeQuietly()
 					output?.cleanup()
 					destination.listFiles(TempFileFilter())?.forEach {
