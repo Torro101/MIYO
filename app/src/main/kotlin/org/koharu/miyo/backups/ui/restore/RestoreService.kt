@@ -62,9 +62,10 @@ class RestoreService : BaseBackupRestoreService() {
 			} else {
 				null
 			}
+			val sourceStream = contentResolver.openInputStream(source) ?: throw FileNotFoundException()
 			val result = ZipInputStream(
 				BoundedInputStream(
-					contentResolver.openInputStream(source),
+					sourceStream,
 					BoundedInputStream.DEFAULT_MAX_TOTAL_BYTES,
 				),
 			).use { input ->

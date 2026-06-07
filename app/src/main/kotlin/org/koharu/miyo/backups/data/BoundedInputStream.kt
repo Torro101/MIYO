@@ -18,7 +18,7 @@ class BoundedInputStream(
 	private val maxBytes: Long,
 ) : FilterInputStream(delegate) {
 
-	private var bytesRead: Long = 0L
+	private var bytesReadInternal: Long = 0L
 
 	override fun read(): Int {
 		val b = super.read()
@@ -49,16 +49,13 @@ class BoundedInputStream(
 	}
 
 	private fun recordRead(n: Long) {
-		bytesRead += n
-		if (bytesRead > maxBytes) {
+		bytesReadInternal += n
+		if (bytesReadInternal > maxBytes) {
 			throw IOException(
 				"Stream exceeded size limit of $maxBytes bytes (zip bomb or corrupt payload?)",
 			)
 		}
 	}
-
-	val bytesRead: Long
-		get() = bytesRead
 
 	companion object {
 		/** Per-entry size cap (256 MB). A single backup entry should not exceed this. */

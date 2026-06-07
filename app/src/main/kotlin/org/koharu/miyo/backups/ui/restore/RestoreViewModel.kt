@@ -45,11 +45,12 @@ class RestoreViewModel @Inject constructor(
 	private suspend fun loadBackupInfo() {
 		val sections = runInterruptible(Dispatchers.IO) {
 			if (uri == null) throw FileNotFoundException()
+			val source = contentResolver.openInputStream(uri) ?: throw FileNotFoundException()
 			// Bounded so a malicious or corrupted backup (zip bomb) cannot
 			// exhaust heap before the entries are inspected.
 			ZipInputStream(
 				BoundedInputStream(
-					contentResolver.openInputStream(uri),
+					source,
 					BoundedInputStream.DEFAULT_MAX_TOTAL_BYTES,
 				),
 			).use { stream ->

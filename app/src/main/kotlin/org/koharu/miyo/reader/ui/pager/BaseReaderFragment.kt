@@ -5,12 +5,14 @@ import android.view.View
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.activityViewModels
 import androidx.viewbinding.ViewBinding
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koharu.miyo.core.prefs.ReaderAnimation
 import org.koharu.miyo.core.ui.BaseFragment
 import org.koharu.miyo.core.ui.widgets.ZoomControl
 import org.koharu.miyo.core.util.ext.isAnimationsEnabled
 import org.koharu.miyo.core.util.ext.observe
+import org.koharu.miyo.reader.ui.ReaderContent
 import org.koharu.miyo.reader.ui.ReaderState
 import org.koharu.miyo.reader.ui.ReaderViewModel
 
@@ -32,7 +34,11 @@ abstract class BaseReaderFragment<B : ViewBinding> : BaseFragment<B>(), ZoomCont
 		// user's scroll is dropped, which the user perceives as the reader
 		// "snapping back" to the first page after every settings or history
 		// update.
-		viewModel.content
+		//
+		// Cast to Flow<ReaderContent> so the non-deprecated
+		// Flow<T>.distinctUntilChanged() overload resolves; the StateFlow
+		// overload is deprecated and treated as a no-op by the compiler.
+		(viewModel.content as Flow<ReaderContent>)
 			.distinctUntilChanged()
 			.observe(viewLifecycleOwner) {
 				// Determine which state to use for restoring position:
