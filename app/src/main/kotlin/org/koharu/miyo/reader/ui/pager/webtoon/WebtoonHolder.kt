@@ -39,13 +39,9 @@ class WebtoonHolder(
 			// Always prefer the saved scroll position when it is non-zero;
 			// itemView.top is usually 0 for a freshly bound holder at the top
 			// of the RecyclerView, so the old `else -> 0` branch overwrote
-			// the saved scroll for nearly every page.
-			val target = when {
-				scrollToRestore != 0 -> scrollToRestore
-				!isReady -> 0
-				else -> 0
-			}
-			scrollTo(target)
+			// the saved scroll for nearly every page. scrollTo() itself
+			// short-circuits while !isReady, so we don't need to gate here.
+			scrollTo(if (scrollToRestore != 0) scrollToRestore else 0)
 			scrollToRestore = 0
 		}
 	}

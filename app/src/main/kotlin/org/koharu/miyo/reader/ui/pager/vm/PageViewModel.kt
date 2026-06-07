@@ -43,10 +43,11 @@ class PageViewModel(
 	private val isWebtoon: Boolean,
 ) : DefaultOnImageEventListener {
 
-	// Use the holder's lifecycle scope so cancellation propagates when the
-	// RecyclerView recycles the holder. Previously this used the activity-
-	// retained loader scope, which leaked jobs and child coroutines across
-	// holder recycles.
+	// Tie coroutine launches to the holder's lifecycle scope. Note that the
+	// holder lifecycle is driven by the parent (fragment / activity), so this
+	// scope does NOT cancel on RecyclerView recycle — it only cancels when the
+	// parent fragment is destroyed. Per-holder cancellation is handled by
+	// job?.cancel() in onRecycle() / evictFromMemory() below.
 	private val scope: CoroutineScope = lifecycleOwner.lifecycleScope
 	private var job: Job? = null
 	private var cachedBounds: Rect? = null

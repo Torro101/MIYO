@@ -42,17 +42,21 @@ object PluginFileLoader {
 			input.use { stream ->
 				partial.outputStream().use { out ->
 					// Cap the copied size. A plugin > MAX_PLUGIN_BYTES is
-					// almost certainly malicious or corrupt.
+					// almost certainly malicious or corrupt. We check the cap
+					// AFTER increment but BEFORE writing each chunk so that
+					// no oversize data is ever written to the partial file —
+					// the .partial is removed in the catch block, but the
+					// design here avoids relying on that.
 					var copied = 0L
 					val buf = ByteArray(64 * 1024)
 					while (true) {
 						val n = stream.read(buf)
 						if (n < 0) break
-						copied += n
-						if (copied > MAX_PLUGIN_BYTES) {
+						if (copied + n > MAX_PLUGIN_BYTES) {
 							throw IOException("Plugin exceeds ${MAX_PLUGIN_BYTES / 1024 / 1024} MB limit")
 						}
 						out.write(buf, 0, n)
+						copied += n
 					}
 					out.flush()
 				}

@@ -16,7 +16,10 @@ class WebtoonFrameLayout @JvmOverloads constructor(
 	val target: WebtoonImageView
 		get() {
 			val cached = _target
-			if (cached != null && cached.parent === this && cached.isAttachedToWindow.not().not()) {
+			// Stale-cache defense: onDetachedFromWindow below clears _target on
+			// recycle, but verify parent + attachment in case this frame is
+			// re-bound to a different WebtoonImageView before detach.
+			if (cached != null && cached.parent === this && cached.isAttachedToWindow) {
 				return cached
 			}
 			val resolved = findViewById<WebtoonImageView?>(R.id.ssiv)

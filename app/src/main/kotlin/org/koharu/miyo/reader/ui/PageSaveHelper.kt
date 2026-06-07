@@ -56,16 +56,15 @@ class PageSaveHelper @AssistedInject constructor(
 	// multi-save, or two concurrent single saves), leaving the earlier caller
 	// hung forever. Each launch installs a fresh channel and the callback
 	// delivers the result to whichever channel currently owns the slot.
-	private data class PendingRequest(val channel: Channel<Uri?>, val expectsResult: Boolean)
-	private var pending: PendingRequest? = null
+	private var pending: Channel<Uri?>? = null
 
 	override fun onActivityResult(result: Uri?) {
 		val current = pending ?: return
 		pending = null
-		if (current.expectsResult) {
-			// Use trySend with UNLIMITED buffer; offer is not needed.
-			current.channel.trySend(result)
-		}
+		// Channel was created with Channel.BUFFERED so trySend never fails for
+		// capacity reasons. Cancellation of a superseded caller also goes
+		// through trySend(null) (see launchAndAwait).
+		current.trySend(result)
 	}
 
 	suspend fun save(tasks: Collection<Task>): Collection<Uri> = when (tasks.size) {
@@ -138,19 +137,27 @@ class PageSaveHelper @AssistedInject constructor(
 	private suspend fun <I> ActivityResultLauncher<I>.launchAndAwait(input: I): Uri {
 		val channel = Channel<Uri?>(capacity = Channel.BUFFERED)
 		// If a previous request is still pending, cancel it before installing
-		// our own channel so the callback cannot deliver the new result to
-		// the wrong caller.
-		pending?.channel?.trySend(null)
-		pending = PendingRequest(channel, expectsResult = true)
+		// our own channel so the callback cannot deliver the new result to the
+		// wrong caller. Closing the previous channel makes its receive() throw
+		// ClosedReceiveChannelException, which we translate to a
+		// CancellationException so callers can recognize the supersession.
+		pending?.close()
+		pending = channel
 		try {
 			return withContext(Dispatchers.Main) {
 				launch(input)
-				val result = channel.receive()
-					?: throw IOException("No result returned for input=$input")
-				result
+				try {
+					val result = channel.receive()
+						?: throw IOException("No result returned for input=$input")
+					result
+				} catch (closed: kotlinx.coroutines.channels.ClosedReceiveChannelException) {
+					throw kotlinx.coroutines.CancellationException(
+						"Activity result superseded for input=$input",
+					).apply { initCause(closed) }
+				}
 			}
 		} finally {
-			if (pending?.channel === channel) {
+			if (pending === channel) {
 				pending = null
 			}
 			channel.close()
