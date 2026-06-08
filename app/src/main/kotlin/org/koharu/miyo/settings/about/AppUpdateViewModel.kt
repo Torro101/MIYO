@@ -88,7 +88,14 @@ class AppUpdateViewModel @Inject constructor(
 					val bytesTotal = cursor.getLong(
 						cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES),
 					)
-					downloadProgress.value = bytesDownloaded.toFloat() / bytesTotal
+					// DownloadManager reports `bytesTotal == -1` while the size
+					// is still being determined. Guard the division so the
+					// progress flow never sees NaN/Infinity.
+					downloadProgress.value = if (bytesTotal > 0L) {
+						bytesDownloaded.toFloat() / bytesTotal
+					} else {
+						-1f
+					}
 					val state = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
 					downloadState.value = state
 					if (state == DownloadManager.STATUS_SUCCESSFUL || state == DownloadManager.STATUS_FAILED) {

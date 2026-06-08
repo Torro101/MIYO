@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.koharu.miyo.R
 import org.koharu.miyo.backups.data.BackupRepository
+import org.koharu.miyo.backups.data.BoundedInputStream
 import org.koharu.miyo.backups.domain.BackupSection
 import org.koharu.miyo.backups.ui.BaseBackupRestoreService
 import org.koharu.miyo.core.nav.AppRouter
@@ -61,7 +62,13 @@ class RestoreService : BaseBackupRestoreService() {
 			} else {
 				null
 			}
-			val result = ZipInputStream(contentResolver.openInputStream(source)).use { input ->
+			val sourceStream = contentResolver.openInputStream(source) ?: throw FileNotFoundException()
+			val result = ZipInputStream(
+				BoundedInputStream(
+					sourceStream,
+					BoundedInputStream.DEFAULT_MAX_TOTAL_BYTES,
+				),
+			).use { input ->
 				repository.restoreBackup(input, sections, progress)
 			}
 			progressUpdateJob?.cancelAndJoin()

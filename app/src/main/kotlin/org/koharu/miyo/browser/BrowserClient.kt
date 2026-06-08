@@ -101,8 +101,19 @@ open class BrowserClient(
 			view?.loadUrl(webFallbackUrl)
 			return true
 		}
-		url.tryOpenExternal(view)
+		// Only auto-launch URLs whose scheme is on a small allowlist of
+		// user-facing intent targets. Anything else (custom schemes, deep
+		// links into other apps) is left to the WebView, which will at
+		// least show a "no handler" error rather than silently launching
+		// a third-party app on behalf of a JavaScript-driven tap.
+		if (url.isExternallyLaunchableScheme()) {
+			url.tryOpenExternal(view)
+		}
 		return true
+	}
+
+	private fun String.isExternallyLaunchableScheme(): Boolean {
+		return substringBefore(':', "").lowercase() in EXTERNAL_LAUNCHABLE_SCHEMES
 	}
 
 	private fun String.isWebViewSafeUrl(): Boolean = when (substringBefore(':', "").lowercase()) {
@@ -144,5 +155,15 @@ open class BrowserClient(
 	private companion object {
 
 		const val BROWSER_FALLBACK_URL = "browser_fallback_url"
+
+		// Schemes that are safe to hand off to an external app without
+		// further confirmation. Anything not on this list is left inside the
+		// WebView so a JavaScript-driven tap cannot silently launch a
+		// third-party app (intent:, market:, custom deep links, etc.).
+		val EXTERNAL_LAUNCHABLE_SCHEMES = setOf(
+			"http", "https", "ftp", "ftps",
+			"mailto", "tel", "sms", "smsto", "mmsto",
+			"geo", "maps",
+		)
 	}
 }

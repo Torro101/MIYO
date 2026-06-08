@@ -42,6 +42,7 @@ abstract class BasePageHolder<B : ViewBinding>(
 
 	protected val viewModel = PageViewModel(
 		loader = loader,
+		lifecycleOwner = lifecycleOwner,
 		settingsProducer = readerSettingsProducer,
 		networkState = networkState,
 		exceptionResolver = exceptionResolver,

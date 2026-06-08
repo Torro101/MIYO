@@ -14,16 +14,33 @@ class WebtoonFrameLayout @JvmOverloads constructor(
 
 	private var _target: WebtoonImageView? = null
 	val target: WebtoonImageView
-		get() = _target ?: findViewById<WebtoonImageView?>(R.id.ssiv).also {
-			_target = it
+		get() {
+			val cached = _target
+			// Stale-cache defense: onDetachedFromWindow below clears _target on
+			// recycle, but verify parent + attachment in case this frame is
+			// re-bound to a different WebtoonImageView before detach.
+			if (cached != null && cached.parent === this && cached.isAttachedToWindow) {
+				return cached
+			}
+			val resolved = findViewById<WebtoonImageView?>(R.id.ssiv)
+			_target = resolved
+			return resolved
 		}
+
+	override fun onDetachedFromWindow() {
+		super.onDetachedFromWindow()
+		// Drop the cached target when this frame is recycled by RecyclerView,
+		// otherwise the next bind may dispatch scroll to a stale view.
+		_target = null
+	}
 
 	fun dispatchVerticalScroll(dy: Int): Int {
 		if (dy == 0) {
 			return 0
 		}
-		val oldScroll = target.getScroll()
-		target.scrollBy(dy)
-		return target.getScroll() - oldScroll
+		val ssiv = target
+		val oldScroll = ssiv.getScroll()
+		ssiv.scrollBy(dy)
+		return ssiv.getScroll() - oldScroll
 	}
 }

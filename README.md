@@ -33,6 +33,18 @@ The app does not ship copyrighted catalogs or hosted content. Sources, plugins, 
 - Protect the app with password or biometric lock options.
 - Run on older Android devices while still using modern Material styling where available.
 
+## In-App Screenshots
+
+## Screenshots
+
+| Library | Explore | Feed |
+|----------|----------|----------|
+| <img src="./.github/assets/library-tab.png" width="220"> | <img src="./.github/assets/explore-tab.png" width="220"> | <img src="./.github/assets/feed-tab.png" width="220"> |
+
+| History | Book Details |
+|----------|----------|
+| <img src="./.github/assets/history-tab.png" width="220"> | <img src="./.github/assets/book-modal.png" width="220"> |
+
 ## Download Reliability
 
 Miyo includes a smarter download pipeline designed for slow and unreliable sources:

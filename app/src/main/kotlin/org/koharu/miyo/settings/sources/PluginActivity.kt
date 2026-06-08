@@ -15,6 +15,7 @@ import org.koharu.miyo.core.nav.AppRouter
 import org.koharu.miyo.core.parser.DynamicParserManager
 import org.koharu.miyo.core.parser.PluginFileLoader
 import org.koharu.miyo.core.util.ext.getParcelableExtraCompat
+import org.koharu.miyo.core.util.ext.printStackTraceDebug
 import java.io.File
 import java.util.Locale
 
@@ -35,6 +36,8 @@ class PluginActivity : AppCompatActivity() {
 			val isSuccess = withContext(Dispatchers.IO) {
 				runCatching {
 					importJar(uri)
+				}.onFailure {
+					it.printStackTraceDebug()
 				}.isSuccess
 			}
 			finishWithResult(isSuccess)
@@ -52,11 +55,15 @@ class PluginActivity : AppCompatActivity() {
 		val originalName = DocumentFile.fromSingleUri(this, uri)?.name
 			?: uri.lastPathSegment?.substringAfterLast('/')
 			?: "plugin_${System.currentTimeMillis()}.jar"
-		val safeName = originalName
-			.replace('/', '_')
-			.replace('\\', '_')
+		// Replace any character that is not safe to use in a filename. This
+		// also collapses control characters and path separators that
+		// upstream content providers may include.
+		val sanitized = originalName
+			.replace(Regex("[^A-Za-z0-9._-]"), "_")
+			.take(MAX_PLUGIN_NAME_LENGTH)
+			.trim('.', '_')
 			.ifBlank { "plugin_${System.currentTimeMillis()}.jar" }
-		return if (safeName.lowercase(Locale.ROOT).endsWith(".jar")) safeName else "$safeName.jar"
+		return if (sanitized.lowercase(Locale.ROOT).endsWith(".jar")) sanitized else "$sanitized.jar"
 	}
 
 	private fun isSupported(uri: Uri): Boolean {
@@ -95,10 +102,10 @@ class PluginActivity : AppCompatActivity() {
 
 	private companion object {
 		const val OCTET_STREAM_MIME_TYPE = "application/octet-stream"
+		const val MAX_PLUGIN_NAME_LENGTH = 96
 		val SUPPORTED_MIME_TYPES = setOf(
 			"application/java-archive",
 			"application/x-java-archive",
-			"application/vnd.android.package-archive",
 			OCTET_STREAM_MIME_TYPE,
 		)
 	}

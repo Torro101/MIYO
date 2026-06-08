@@ -35,43 +35,51 @@ class ReversedPageHolder(
 	}
 
 	override fun onReady() {
-		with(binding.ssiv) {
-			maxScale = 2f * maxOf(
-				width / sWidth.toFloat(),
-				height / sHeight.toFloat(),
+		val ssiv = binding.ssiv
+		ssiv.colorFilter = settings.colorFilter?.toColorFilter()
+
+		// Guard against onReady firing with sWidth/sHeight == 0 (recycled
+		// state). Without this guard the divisions produce Infinity/NaN.
+		val hasSize = ssiv.sWidth > 0 && ssiv.sHeight > 0 && ssiv.width > 0 && ssiv.height > 0
+		if (hasSize) {
+			ssiv.maxScale = 2f * maxOf(
+				ssiv.width / ssiv.sWidth.toFloat(),
+				ssiv.height / ssiv.sHeight.toFloat(),
 			)
-			binding.ssiv.colorFilter = settings.colorFilter?.toColorFilter()
-			when (settings.zoomMode) {
-				ZoomMode.FIT_CENTER -> {
-					minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
-					resetScaleAndCenter()
-				}
+		}
+		when (settings.zoomMode) {
+			ZoomMode.FIT_CENTER -> {
+				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
+				ssiv.resetScaleAndCenter()
+			}
 
-				ZoomMode.FIT_HEIGHT -> {
-					minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
-					minScale = height / sHeight.toFloat()
-					setScaleAndCenter(
-						minScale,
-						PointF(sWidth.toFloat(), sHeight / 2f),
-					)
-				}
+			ZoomMode.FIT_HEIGHT -> {
+				if (!hasSize) return
+				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
+				ssiv.minScale = ssiv.height / ssiv.sHeight.toFloat()
+				ssiv.setScaleAndCenter(
+					ssiv.minScale,
+					PointF(ssiv.sWidth.toFloat(), ssiv.sHeight / 2f),
+				)
+			}
 
-				ZoomMode.FIT_WIDTH -> {
-					minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
-					minScale = width / sWidth.toFloat()
-					setScaleAndCenter(
-						minScale,
-						PointF(sWidth / 2f, 0f),
-					)
-				}
+			ZoomMode.FIT_WIDTH -> {
+				if (!hasSize) return
+				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
+				ssiv.minScale = ssiv.width / ssiv.sWidth.toFloat()
+				ssiv.setScaleAndCenter(
+					ssiv.minScale,
+					PointF(ssiv.sWidth / 2f, 0f),
+				)
+			}
 
-				ZoomMode.KEEP_START -> {
-					minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
-					setScaleAndCenter(
-						maxScale,
-						PointF(sWidth.toFloat(), 0f),
-					)
-				}
+			ZoomMode.KEEP_START -> {
+				if (!hasSize) return
+				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
+				ssiv.setScaleAndCenter(
+					ssiv.maxScale,
+					PointF(ssiv.sWidth.toFloat(), 0f),
+				)
 			}
 		}
 	}

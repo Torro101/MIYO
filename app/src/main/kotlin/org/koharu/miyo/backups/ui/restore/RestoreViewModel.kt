@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
+import org.koharu.miyo.backups.data.BoundedInputStream
 import org.koharu.miyo.backups.data.model.BackupIndex
 import org.koharu.miyo.backups.domain.BackupSection
 import org.koharu.miyo.core.nav.AppRouter
@@ -44,7 +45,15 @@ class RestoreViewModel @Inject constructor(
 	private suspend fun loadBackupInfo() {
 		val sections = runInterruptible(Dispatchers.IO) {
 			if (uri == null) throw FileNotFoundException()
-			ZipInputStream(contentResolver.openInputStream(uri)).use { stream ->
+			val source = contentResolver.openInputStream(uri) ?: throw FileNotFoundException()
+			// Bounded so a malicious or corrupted backup (zip bomb) cannot
+			// exhaust heap before the entries are inspected.
+			ZipInputStream(
+				BoundedInputStream(
+					source,
+					BoundedInputStream.DEFAULT_MAX_TOTAL_BYTES,
+				),
+			).use { stream ->
 				val result = EnumSet.noneOf(BackupSection::class.java)
 				var entry = stream.nextEntry
 				while (entry != null) {

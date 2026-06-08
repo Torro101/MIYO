@@ -6,6 +6,8 @@ import androidx.annotation.WorkerThread
 import androidx.core.net.toUri
 import com.davemorrissey.labs.subscaleview.DefaultOnImageEventListener
 import com.davemorrissey.labs.subscaleview.ImageSource
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,13 +36,19 @@ import org.koharu.miyo.reader.ui.config.ReaderSettings
 
 class PageViewModel(
 	private val loader: PageLoader,
+	private val lifecycleOwner: LifecycleOwner,
 	val settingsProducer: ReaderSettings.Producer,
 	private val networkState: NetworkState,
 	private val exceptionResolver: ExceptionResolver,
 	private val isWebtoon: Boolean,
 ) : DefaultOnImageEventListener {
 
-	private val scope = loader.loaderScope + Dispatchers.Main.immediate
+	// Tie coroutine launches to the holder's lifecycle scope. Note that the
+	// holder lifecycle is driven by the parent (fragment / activity), so this
+	// scope does NOT cancel on RecyclerView recycle — it only cancels when the
+	// parent fragment is destroyed. Per-holder cancellation is handled by
+	// job?.cancel() in onRecycle() / evictFromMemory() below.
+	private val scope: CoroutineScope = lifecycleOwner.lifecycleScope
 	private var job: Job? = null
 	private var cachedBounds: Rect? = null
 	private var currentPage: MangaPage? = null
