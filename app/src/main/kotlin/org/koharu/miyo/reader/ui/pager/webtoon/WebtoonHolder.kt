@@ -55,8 +55,9 @@ class WebtoonHolder(
 	private fun requestParentScrollSync() {
 		var parent = itemView.parent
 		while (parent != null) {
-			if (parent is WebtoonRecyclerView) {
-				parent.post { parent.updateChildrenScroll() }
+			val recycler = parent as? WebtoonRecyclerView
+			if (recycler != null) {
+				recycler.post { recycler.updateChildrenScroll() }
 				break
 			}
 			parent = parent.parent

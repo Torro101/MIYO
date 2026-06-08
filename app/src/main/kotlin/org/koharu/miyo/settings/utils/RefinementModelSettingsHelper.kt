@@ -46,6 +46,6 @@ class RefinementModelSettingsHelper(
 	}
 
 	companion object {
-		const val IMPORT_MIME_TYPES = arrayOf("application/zip", "application/x-zip-compressed")
+		val IMPORT_MIME_TYPES = arrayOf("application/zip", "application/x-zip-compressed")
 	}
 }
