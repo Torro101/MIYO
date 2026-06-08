@@ -1,0 +1,18 @@
+{
+  "id": "sharp-x4v1",
+  "version": 1,
+  "description": "Sharper profile for blurry pages with conservative output-size caps.",
+  "targetLongSidePx": 2000,
+  "minUpscaleFactor": 1.08,
+  "maxUpscaleFactor": 1.38,
+  "contrast": 1.08,
+  "brightness": 2.5,
+  "saturation": 1.04,
+  "sharpen": 0.46,
+  "jpegQuality": 88,
+  "maxOutputSizeRatio": 1.18,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 18000000,
+  "maxOutputPixels": 21000000,
+  "maxWorkingMemoryMb": 288
+}

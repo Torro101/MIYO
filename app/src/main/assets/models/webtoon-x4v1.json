@@ -1,0 +1,18 @@
+{
+  "id": "webtoon-x4v1",
+  "version": 1,
+  "description": "Tall-page profile tuned for vertical webtoon and manhwa panels.",
+  "targetLongSidePx": 2200,
+  "minUpscaleFactor": 1.06,
+  "maxUpscaleFactor": 1.28,
+  "contrast": 1.06,
+  "brightness": 3.0,
+  "saturation": 1.05,
+  "sharpen": 0.34,
+  "jpegQuality": 86,
+  "maxOutputSizeRatio": 1.12,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 24000000,
+  "maxOutputPixels": 26000000,
+  "maxWorkingMemoryMb": 320
+}

@@ -222,22 +222,30 @@ jobs:
           fi
           cp "${release_apks[0]}" "release/Miyo-v${version_name}-release.apk"
 
-      - name: Verify Bundled general-x4v3 Model
+      - name: Verify Bundled Refinement Models
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
+          expected_models=(general-x4v3 fast-x2v1 sharp-x4v1 webtoon-x4v1)
           for apk in release/*-release.apk; do
-            model_entries="$(unzip -Z1 "${apk}" | grep '^assets/models/' || true)"
+            model_entries="$(unzip -Z1 "${apk}" | grep '^assets/models/' | sed '/^$/d' | sort || true)"
             model_count="$(printf '%s\n' "${model_entries}" | sed '/^$/d' | wc -l | tr -d ' ')"
-            if [ "${model_count}" != "1" ] || [ "${model_entries}" != "assets/models/general-x4v3.json" ]; then
-              echo "Expected only assets/models/general-x4v3.json in ${apk}, found:" >&2
+            if [ "${model_count}" != "4" ]; then
+              echo "Expected 4 bundled refinement models in ${apk}, found ${model_count}:" >&2
               printf '%s\n' "${model_entries}" >&2
               exit 1
             fi
-            unzip -p "${apk}" "assets/models/general-x4v3.json" | grep -q '"id"[[:space:]]*:[[:space:]]*"general-x4v3"' || {
-              echo "Bundled model in ${apk} does not identify as general-x4v3" >&2
-              exit 1
-            }
+            for model in "${expected_models[@]}"; do
+              entry="assets/models/${model}.json"
+              if ! printf '%s\n' "${model_entries}" | grep -qx "${entry}"; then
+                echo "Missing bundled model ${entry} in ${apk}" >&2
+                exit 1
+              fi
+              unzip -p "${apk}" "${entry}" | grep -q "\"id\"[[:space:]]*:[[:space:]]*\"${model}\"" || {
+                echo "Bundled model ${entry} in ${apk} has the wrong id" >&2
+                exit 1
+              }
+            done
           done
 
       - name: Prepare Downloadable Refinement Models

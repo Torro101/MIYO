@@ -59,7 +59,7 @@ class WebtoonRecyclerView @JvmOverloads constructor(
 
 	override fun startNestedScroll(axes: Int) = startNestedScroll(axes, TYPE_TOUCH)
 
-	override fun startNestedScroll(axes: Int, type: Int): Boolean = isNotEmpty()
+	override fun startNestedScroll(axes: Int, type: Int): Boolean = super.startNestedScroll(axes, type)
 
 	override fun dispatchNestedPreScroll(
 		dx: Int,
@@ -81,7 +81,14 @@ class WebtoonRecyclerView @JvmOverloads constructor(
 			consumed[1] = consumedY
 		}
 		notifyScrollChanged(dy)
-		return consumedY != 0 || dy == 0
+		return consumedY != 0
+	}
+
+	override fun onScrolled(dx: Int, dy: Int) {
+		super.onScrolled(dx, dy)
+		if (dy != 0) {
+			updateChildrenScroll()
+		}
 	}
 
 	private fun consumeVerticalScroll(dy: Int): Int {
@@ -163,20 +170,25 @@ class WebtoonRecyclerView @JvmOverloads constructor(
 		isFixingScroll = false
 	}
 
-	private fun adjustScroll(child: View, ssiv: WebtoonImageView): Boolean = when {
-		child.bottom < height && ssiv.getScroll() < ssiv.getScrollRange() -> {
-			val distance = minOf(height - child.bottom, ssiv.getScrollRange() - ssiv.getScroll())
-			ssiv.scrollBy(distance)
-			true
+	private fun adjustScroll(child: View, ssiv: WebtoonImageView): Boolean {
+		if (!ssiv.isReady) {
+			return false
 		}
+		return when {
+			child.bottom < height && ssiv.getScroll() < ssiv.getScrollRange() -> {
+				val distance = minOf(height - child.bottom, ssiv.getScrollRange() - ssiv.getScroll())
+				ssiv.scrollBy(distance)
+				true
+			}
 
-		child.top > 0 && ssiv.getScroll() > 0 -> {
-			val distance = minOf(child.top, ssiv.getScroll())
-			ssiv.scrollBy(-distance)
-			true
+			child.top > 0 && ssiv.getScroll() > 0 -> {
+				val distance = minOf(child.top, ssiv.getScroll())
+				ssiv.scrollBy(-distance)
+				true
+			}
+
+			else -> false
 		}
-
-		else -> false
 	}
 
 	private class WebtoonScrollDispatcher {

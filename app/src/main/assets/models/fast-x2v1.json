@@ -1,0 +1,18 @@
+{
+  "id": "fast-x2v1",
+  "version": 1,
+  "description": "Low-memory fast profile for weak devices and large chapters.",
+  "targetLongSidePx": 1400,
+  "minUpscaleFactor": 1.05,
+  "maxUpscaleFactor": 1.18,
+  "contrast": 1.05,
+  "brightness": 2.0,
+  "saturation": 1.03,
+  "sharpen": 0.22,
+  "jpegQuality": 84,
+  "maxOutputSizeRatio": 1.05,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 14000000,
+  "maxOutputPixels": 15000000,
+  "maxWorkingMemoryMb": 192
+}

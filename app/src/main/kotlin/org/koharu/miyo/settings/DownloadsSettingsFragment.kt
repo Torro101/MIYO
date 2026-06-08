@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -28,8 +29,10 @@ import org.koharu.miyo.core.util.ext.tryLaunch
 import org.koharu.miyo.core.util.ext.viewLifecycleScope
 import org.koharu.miyo.download.ui.worker.DownloadWorker
 import org.koharu.miyo.local.data.LocalStorageManager
+import org.koharu.miyo.reader.domain.BundledImageRefinementModel
 import org.koitharu.kotatsu.parsers.util.names
 import org.koharu.miyo.settings.utils.DozeHelper
+import org.koharu.miyo.settings.utils.RefinementModelSettingsHelper
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -44,6 +47,22 @@ class DownloadsSettingsFragment :
 
 	@Inject
 	lateinit var downloadsScheduler: DownloadWorker.Scheduler
+
+	@Inject
+	lateinit var refinementModel: BundledImageRefinementModel
+
+	private lateinit var refinementModelHelper: RefinementModelSettingsHelper
+
+	private val importModelsLauncher = registerForActivityResult(
+		ActivityResultContracts.OpenDocument(),
+	) { uri ->
+		if (uri != null && isAdded) {
+			refinementModelHelper.importModelsZip(uri)
+			findPreference<ListPreference>(AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL)?.let {
+				refinementModelHelper.bindModelSummary(it)
+			}
+		}
+	}
 
 	private val pickFileTreeLauncher = OpenDocumentTreeHelper(this) {
 		if (it != null) onDirectoryPicked(it)
@@ -60,10 +79,17 @@ class DownloadsSettingsFragment :
 			setDefaultValueCompat(TriStateOption.ASK.name)
 		}
 		dozeHelper.updatePreference()
+		refinementModelHelper = RefinementModelSettingsHelper(this, refinementModel)
+		findPreference<ListPreference>(AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL)?.let { preference ->
+			refinementModelHelper.bindModelSummary(preference)
+		}
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
+		if (!::refinementModelHelper.isInitialized) {
+			refinementModelHelper = RefinementModelSettingsHelper(this, refinementModel)
+		}
 		findPreference<Preference>(AppSettings.KEY_LOCAL_STORAGE)?.bindStorageName()
 		findPreference<Preference>(AppSettings.KEY_LOCAL_MANGA_DIRS)?.bindDirectoriesCount()
 		findPreference<Preference>(AppSettings.KEY_PAGES_SAVE_DIR)?.bindPagesDirectory()
@@ -92,6 +118,12 @@ class DownloadsSettingsFragment :
 			AppSettings.KEY_PAGES_SAVE_DIR -> {
 				findPreference<Preference>(AppSettings.KEY_PAGES_SAVE_DIR)?.bindPagesDirectory()
 			}
+
+			AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL -> {
+				findPreference<ListPreference>(key)?.let {
+					refinementModelHelper.bindModelSummary(it)
+				}
+			}
 		}
 	}
 
@@ -117,6 +149,11 @@ class DownloadsSettingsFragment :
 						requireView(), R.string.operation_not_supported, Snackbar.LENGTH_SHORT,
 					).show()
 				}
+				true
+			}
+
+			AppSettings.KEY_IMPORT_REFINEMENT_MODELS -> {
+				importModelsLauncher.launch(RefinementModelSettingsHelper.IMPORT_MIME_TYPES)
 				true
 			}
 

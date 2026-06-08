@@ -86,6 +86,7 @@ import org.koharu.miyo.download.domain.DownloadState
 import org.koharu.miyo.local.data.LocalMangaRepository
 import org.koharu.miyo.local.data.LocalStorageCache
 import org.koharu.miyo.local.data.LocalStorageChanges
+import org.koharu.miyo.local.data.index.LocalMangaIndex
 import org.koharu.miyo.local.data.PageCache
 import org.koharu.miyo.local.data.TempFileFilter
 import org.koharu.miyo.local.data.input.LocalMangaParser
@@ -121,6 +122,7 @@ class DownloadWorker @AssistedInject constructor(
 	@MangaHttpClient private val okHttp: OkHttpClient,
 	@PageCache private val cache: LocalStorageCache,
 	private val localMangaRepository: LocalMangaRepository,
+	private val localMangaIndex: LocalMangaIndex,
 	private val mangaLock: MangaLock,
 	private val mangaDataRepository: MangaDataRepository,
 	private val mangaRepositoryFactory: MangaRepository.Factory,
@@ -384,7 +386,9 @@ class DownloadWorker @AssistedInject constructor(
 					analytics.recordChapterComplete(repo.source, pages.size, chapterBytes.get())
 					if (output.flushChapter(chapter.value)) {
 						runCatchingCancellable {
-							localStorageChanges.emit(LocalMangaParser(output.rootFile).getManga(withDetails = false))
+							val partialManga = LocalMangaParser(output.rootFile).getManga(withDetails = false)
+							localMangaIndex.put(partialManga)
+							localStorageChanges.emit(partialManga)
 						}.onFailure(Throwable::printStackTraceDebug)
 					}
 					publishState(
@@ -406,6 +410,7 @@ class DownloadWorker @AssistedInject constructor(
 				output.mergeWithExisting()
 				output.finish()
 				val localManga = LocalMangaParser(output.rootFile).getManga(withDetails = false)
+				localMangaIndex.put(localManga)
 				localStorageChanges.emit(localManga)
 				publishState(
 					currentState.copy(

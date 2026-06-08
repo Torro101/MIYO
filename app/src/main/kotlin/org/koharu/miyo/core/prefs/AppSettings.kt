@@ -861,6 +861,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_READER_IMAGE_ENHANCEMENT = "reader_image_enhancement"
 		const val KEY_DOWNLOAD_IMAGE_ENHANCEMENT = "download_image_enhancement"
 		const val KEY_IMAGE_ENHANCEMENT_MODEL = "image_enhancement_model"
+		const val KEY_IMPORT_REFINEMENT_MODELS = "import_refinement_models"
 		const val KEY_DELETE_ORIGINAL_AFTER_REFINEMENT = "delete_original_after_refinement"
 		const val KEY_SOURCES_ORDER = "sources_sort_order"
 		const val KEY_SOURCES_CATALOG = "sources_catalog"

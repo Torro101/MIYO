@@ -45,6 +45,23 @@ class WebtoonHolder(
 			)
 			scrollToRestore = 0
 		}
+		requestParentScrollSync()
+	}
+
+	override fun onImageLoaded() {
+		super.onImageLoaded()
+		requestParentScrollSync()
+	}
+
+	private fun requestParentScrollSync() {
+		var parent = itemView.parent
+		while (parent != null) {
+			if (parent is WebtoonRecyclerView) {
+				parent.post { parent.updateChildrenScroll() }
+				break
+			}
+			parent = parent.parent
+		}
 	}
 
 	fun getScrollY() = binding.ssiv.getScroll()

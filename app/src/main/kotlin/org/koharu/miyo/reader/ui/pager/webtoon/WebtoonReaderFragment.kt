@@ -61,6 +61,13 @@ class WebtoonReaderFragment : BaseReaderFragment<FragmentReaderWebtoonBinding>()
 			recyclerLifecycleDispatcher = RecyclerViewLifecycleDispatcher().also {
 				addOnScrollListener(it)
 			}
+			addOnScrollListener(object : RecyclerView.OnScrollListener() {
+				override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+					if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+						(recyclerView as WebtoonRecyclerView).updateChildrenScroll()
+					}
+				}
+			})
 			setOnPullGestureListener(this@WebtoonReaderFragment)
 		}
 		viewModel.isWebtoonZooEnabled.observe(viewLifecycleOwner) {

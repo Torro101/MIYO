@@ -504,7 +504,11 @@
     <string name="reader_image_enhancement">Image refinement while reading</string>
     <string name="reader_image_enhancement_summary">Enhance readable local pages through a safe cache. Originals stay untouched and are used if refinement fails.</string>
     <string name="image_enhancement_model">Refinement model</string>
-    <string name="image_enhancement_model_summary">Choose the refinement profile. General x4v3 is bundled; the other profiles are loaded when downloaded to app storage.</string>
+    <string name="image_enhancement_model_summary">Choose the refinement profile. All four profiles are bundled; you can also import updated profiles from a release zip.</string>
+    <string name="import_refinement_models">Import refinement models</string>
+    <string name="import_refinement_models_summary">Install or update refinement profiles from a miyo-refinement-models zip archive.</string>
+    <string name="refinement_models_imported">Installed refinement models: %1$s</string>
+    <string name="refinement_models_import_failed">Could not import refinement models</string>
     <string name="suggest_new_sources">Suggest new sources after app update</string>
     <string name="suggest_new_sources_summary">Prompt to enable newly added sources after updating the application</string>
     <string name="list_options">List options</string>

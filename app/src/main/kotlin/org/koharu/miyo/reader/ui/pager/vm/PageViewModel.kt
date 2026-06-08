@@ -232,7 +232,7 @@ class PageViewModel(
 				uri
 			}
 			originalDisplayUri = originalUri
-			val displayUri = loader.enhanceForReader(data, originalUri)
+			val displayUri = loader.enhanceForReader(data, originalUri, isWebtoon)
 			cachedBounds = if (settingsProducer.value.isPagesCropEnabled(isWebtoon)) {
 				loader.getTrimmedBounds(displayUri)
 			} else {

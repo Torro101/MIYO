@@ -280,8 +280,12 @@ class PageLoader @Inject constructor(
 		error.printStackTraceDebug()
 	}.getOrNull()
 
-	suspend fun enhanceForReader(page: MangaPage, displayUri: Uri): Uri {
-		return imageEnhancementProcessor.enhanceForReader(displayUri, page.taskKey().toString())
+	suspend fun enhanceForReader(page: MangaPage, displayUri: Uri, isWebtoon: Boolean = false): Uri {
+		return imageEnhancementProcessor.enhanceForReader(
+			sourceUri = displayUri,
+			stableKey = page.taskKey().toString(),
+			isWebtoon = isWebtoon,
+		)
 	}
 
 	suspend fun getPageUrl(page: MangaPage): String {

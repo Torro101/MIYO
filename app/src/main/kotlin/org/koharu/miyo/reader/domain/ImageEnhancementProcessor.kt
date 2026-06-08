@@ -3,10 +3,12 @@ package org.koharu.miyo.reader.domain
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
 import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.Rect
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import dagger.Reusable
@@ -33,6 +35,8 @@ import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -46,7 +50,15 @@ class ImageEnhancementProcessor @Inject constructor(
 	private val bundledModel: BundledImageRefinementModel,
 ) {
 
-	suspend fun enhanceForReader(sourceUri: android.net.Uri, stableKey: String): android.net.Uri {
+	init {
+		nativeImageEnhancer.isAvailable
+	}
+
+	suspend fun enhanceForReader(
+		sourceUri: android.net.Uri,
+		stableKey: String,
+		isWebtoon: Boolean = false,
+	): android.net.Uri {
 		if (!settings.isReaderImageEnhancementEnabled || !sourceUri.isFileUri()) {
 			return sourceUri
 		}
@@ -54,7 +66,9 @@ class ImageEnhancementProcessor @Inject constructor(
 		if (!sourceFile.isReadableImage()) {
 			return sourceUri
 		}
-		val cacheKey = buildCacheKey("reader", stableKey, sourceFile)
+		val bounds = readBounds(sourceFile) ?: return sourceUri
+		val profile = resolveProfile(bounds, isWebtoon)
+		val cacheKey = buildCacheKey("reader", stableKey, sourceFile, profile)
 		cache[cacheKey]?.let { cached ->
 			if (cached.isReadableImage()) {
 				return cached.toUri()
@@ -65,8 +79,8 @@ class ImageEnhancementProcessor @Inject constructor(
 			sourceFile = sourceFile,
 			destination = sourceFile.parentFile ?: context.cacheDir,
 			allowFormatChange = true,
-		)
-			?: return sourceUri
+			profile = profile,
+		) ?: return sourceUri
 		return try {
 			val cached = enhancedImage.file.source().use { source ->
 				cache.set(cacheKey, source, enhancedImage.mimeType)
@@ -89,11 +103,15 @@ class ImageEnhancementProcessor @Inject constructor(
 		if (!settings.isDownloadImageEnhancementEnabled || !sourceFile.isReadableImage()) {
 			return null
 		}
-		return createEnhancedTempImage(sourceFile, destination, allowFormatChange = true)?.file
+		val bounds = readBounds(sourceFile) ?: return null
+		val profile = resolveProfile(bounds, isWebtoon = bounds.isTallPage())
+		return createEnhancedTempImage(sourceFile, destination, allowFormatChange = true, profile = profile)?.file
 	}
 
 	suspend fun refineLocalImage(sourceFile: File, destination: File): File? {
-		return createEnhancedTempImage(sourceFile, destination, allowFormatChange = false)?.file
+		val bounds = readBounds(sourceFile) ?: return null
+		val profile = resolveProfile(bounds, isWebtoon = bounds.isTallPage())
+		return createEnhancedTempImage(sourceFile, destination, allowFormatChange = false, profile = profile)?.file
 	}
 
 	fun isReadableImageFile(file: File): Boolean = file.isReadableImage()
@@ -102,11 +120,12 @@ class ImageEnhancementProcessor @Inject constructor(
 		sourceFile: File,
 		destination: File,
 		allowFormatChange: Boolean,
+		profile: BundledImageRefinementModel.Profile,
 	): EnhancedImage? = withContext(Dispatchers.IO) {
 		val tempFile = File(destination, "${UUID.randomUUID()}.enhanced.tmp")
 		try {
 			val encoding = runInterruptible {
-				enhanceToFile(sourceFile, tempFile, allowFormatChange)
+				enhanceToFile(sourceFile, tempFile, allowFormatChange, profile)
 			}
 			if (encoding != null && tempFile.isReadableImage()) {
 				EnhancedImage(tempFile, encoding.mimeType)
@@ -121,16 +140,36 @@ class ImageEnhancementProcessor @Inject constructor(
 		}
 	}
 
-	private fun enhanceToFile(sourceFile: File, outputFile: File, allowFormatChange: Boolean): OutputEncoding? {
+	private fun enhanceToFile(
+		sourceFile: File,
+		outputFile: File,
+		allowFormatChange: Boolean,
+		profile: BundledImageRefinementModel.Profile,
+	): OutputEncoding? {
 		val sourceMimeType = detectMimeType(sourceFile) ?: return null
-		val encodings = sourceMimeType.outputEncodings(allowFormatChange)
+		val encodings = sourceMimeType.outputEncodings(allowFormatChange, profile)
 		if (encodings.isEmpty()) {
 			return null
 		}
 		val bounds = readBounds(sourceFile) ?: return null
-		if (!bounds.hasUsefulSize() || !hasMemoryBudget(bounds.width, bounds.height)) {
+		if (!bounds.hasUsefulSize(profile)) {
 			return null
 		}
+		return if (hasMemoryBudget(bounds.width, bounds.height, profile)) {
+			enhanceFullFrame(sourceFile, outputFile, encodings, profile)
+		} else if (bounds.canEnhanceTiled(profile)) {
+			enhanceTiled(sourceFile, outputFile, bounds, encodings, profile)
+		} else {
+			null
+		}
+	}
+
+	private fun enhanceFullFrame(
+		sourceFile: File,
+		outputFile: File,
+		encodings: List<OutputEncoding>,
+		profile: BundledImageRefinementModel.Profile,
+	): OutputEncoding? {
 		val sourceBitmap = BitmapFactory.decodeFile(
 			sourceFile.absolutePath,
 			BitmapFactory.Options().apply {
@@ -140,30 +179,90 @@ class ImageEnhancementProcessor @Inject constructor(
 		var scaledBitmap: Bitmap? = null
 		var enhancedBitmap: Bitmap? = null
 		return try {
-			val workingBitmap = sourceBitmap.scaleIfUseful().also {
+			val workingBitmap = sourceBitmap.scaleIfUseful(profile).also {
 				if (it !== sourceBitmap) {
 					scaledBitmap = it
 				}
 			}
-			enhancedBitmap = workingBitmap.applyMildEnhancement()
-			val resultBitmap = enhancedBitmap ?: return null
-			val maxOutputBytes = sourceFile.maxEnhancedOutputBytes()
-			for (encoding in encodings) {
-				outputFile.delete()
-				val success = outputFile.outputStream().use { output ->
-					resultBitmap.compress(encoding.format, encoding.quality, output)
-				}
-				if (success && outputFile.isFile && outputFile.length() in 1L..maxOutputBytes) {
-					return encoding
-				}
-			}
-			outputFile.delete()
-			null
+			enhancedBitmap = workingBitmap.applyMildEnhancement(profile)
+			writeBitmap(outputFile, sourceFile, enhancedBitmap, encodings, profile)
 		} finally {
 			enhancedBitmap?.recycle()
 			scaledBitmap?.recycle()
 			sourceBitmap.recycle()
 		}
+	}
+
+	private fun enhanceTiled(
+		sourceFile: File,
+		outputFile: File,
+		bounds: ImageBounds,
+		encodings: List<OutputEncoding>,
+		profile: BundledImageRefinementModel.Profile,
+	): OutputEncoding? {
+		val decoder = BitmapRegionDecoder.newInstance(sourceFile.absolutePath, false) ?: return null
+		var outputBitmap: Bitmap? = null
+		return try {
+			outputBitmap = Bitmap.createBitmap(bounds.width, bounds.height, Bitmap.Config.ARGB_8888)
+			val stripHeight = bounds.stripHeight(profile)
+			var y = 0
+			while (y < bounds.height) {
+				val height = min(stripHeight, bounds.height - y)
+				val region = Rect(0, y, bounds.width, y + height)
+				var stripBitmap: Bitmap? = null
+				var scaledBitmap: Bitmap? = null
+				var enhancedBitmap: Bitmap? = null
+				try {
+					stripBitmap = decoder.decodeRegion(
+						region,
+						BitmapFactory.Options().apply {
+							inPreferredConfig = Bitmap.Config.ARGB_8888
+						},
+					) ?: return null
+					val workingBitmap = stripBitmap.scaleIfUseful(profile).also {
+						if (it !== stripBitmap) {
+							scaledBitmap = it
+						}
+					}
+					enhancedBitmap = workingBitmap.applyMildEnhancement(profile)
+					Canvas(outputBitmap).drawBitmap(enhancedBitmap, 0f, y.toFloat(), null)
+				} finally {
+					enhancedBitmap?.recycle()
+					scaledBitmap?.recycle()
+					stripBitmap?.recycle()
+				}
+				y += height
+			}
+			writeBitmap(outputFile, sourceFile, outputBitmap, encodings, profile)
+		} catch (e: Exception) {
+			e.printStackTraceDebug()
+			outputFile.delete()
+			null
+		} finally {
+			outputBitmap?.recycle()
+			decoder.recycle()
+		}
+	}
+
+	private fun writeBitmap(
+		outputFile: File,
+		sourceFile: File,
+		resultBitmap: Bitmap,
+		encodings: List<OutputEncoding>,
+		profile: BundledImageRefinementModel.Profile,
+	): OutputEncoding? {
+		val maxOutputBytes = sourceFile.maxEnhancedOutputBytes(profile)
+		for (encoding in encodings) {
+			outputFile.delete()
+			val success = outputFile.outputStream().use { output ->
+				resultBitmap.compress(encoding.format, encoding.quality, output)
+			}
+			if (success && outputFile.isFile && outputFile.length() in 1L..maxOutputBytes) {
+				return encoding
+			}
+		}
+		outputFile.delete()
+		return null
 	}
 
 	private fun detectMimeType(file: File): MimeType? {
@@ -199,72 +298,110 @@ class ImageEnhancementProcessor @Inject constructor(
 		return ImageBounds(options.outWidth, options.outHeight)
 	}
 
-	private fun activeProfile(): BundledImageRefinementModel.Profile {
-		return bundledModel.profileFor(settings.imageEnhancementModelId)
+	private fun resolveProfile(
+		bounds: ImageBounds,
+		isWebtoon: Boolean,
+	): BundledImageRefinementModel.Profile {
+		val selectedId = settings.imageEnhancementModelId
+		if (selectedId != BundledImageRefinementModel.DEFAULT_MODEL_ID &&
+			bundledModel.isModelAvailable(selectedId)
+		) {
+			return bundledModel.profileFor(selectedId)
+		}
+		if ((isWebtoon || bounds.isTallPage()) &&
+			bundledModel.isModelAvailable(BundledImageRefinementModel.WEBTOON_MODEL_ID)
+		) {
+			return bundledModel.profileFor(BundledImageRefinementModel.WEBTOON_MODEL_ID)
+		}
+		return bundledModel.profileFor(selectedId)
 	}
 
-	private fun ImageBounds.hasUsefulSize(): Boolean {
-		val model = activeProfile()
+	private fun ImageBounds.hasUsefulSize(profile: BundledImageRefinementModel.Profile): Boolean {
 		val pixels = width.toLong() * height.toLong()
-		return width > 0 && height > 0 && pixels in model.minSourcePixels..model.maxSourcePixels
+		return width > 0 && height > 0 && pixels in profile.minSourcePixels..profile.maxSourcePixels
 	}
 
-	private fun hasMemoryBudget(width: Int, height: Int): Boolean {
-		val model = activeProfile()
+	private fun ImageBounds.canEnhanceTiled(profile: BundledImageRefinementModel.Profile): Boolean {
+		if (width <= 0 || height <= 0 || height <= width) {
+			return false
+		}
+		val pixels = width.toLong() * height.toLong()
+		if (pixels !in profile.minSourcePixels..profile.maxSourcePixels) {
+			return false
+		}
+		val stripHeight = stripHeight(profile)
+		return stripHeight in MIN_STRIP_HEIGHT..height && hasMemoryBudget(width, stripHeight, profile)
+	}
+
+	private fun ImageBounds.isTallPage(): Boolean {
+		return height > width * 2 && height >= TALL_PAGE_MIN_HEIGHT_PX
+	}
+
+	private fun ImageBounds.stripHeight(profile: BundledImageRefinementModel.Profile): Int {
+		val maxPixelsPerStrip = FileSize.MEGABYTES.convert(profile.maxWorkingMemoryMb, FileSize.BYTES) /
+			(BYTES_PER_ARGB_PIXEL * WORKING_BITMAP_COUNT)
+		val maxHeight = (maxPixelsPerStrip / width.toLong()).toInt()
+			.coerceIn(MIN_STRIP_HEIGHT, MAX_STRIP_HEIGHT)
+		return min(maxHeight, height)
+	}
+
+	private fun hasMemoryBudget(
+		width: Int,
+		height: Int,
+		profile: BundledImageRefinementModel.Profile,
+	): Boolean {
 		val pixels = width.toLong() * height.toLong()
 		val requiredBytes = pixels * BYTES_PER_ARGB_PIXEL * WORKING_BITMAP_COUNT
 		val availableRam = context.ramAvailable
 		val ramLimit = if (availableRam > 0L) availableRam / 2L else Long.MAX_VALUE
 		val maxAllowed = minOf(
-			FileSize.MEGABYTES.convert(model.maxWorkingMemoryMb, FileSize.BYTES),
+			FileSize.MEGABYTES.convert(profile.maxWorkingMemoryMb, FileSize.BYTES),
 			ramLimit,
 		)
 		return requiredBytes <= maxAllowed
 	}
 
-	private fun Bitmap.scaleIfUseful(): Bitmap {
-		val model = activeProfile()
+	private fun Bitmap.scaleIfUseful(profile: BundledImageRefinementModel.Profile): Bitmap {
 		val maxSide = maxOf(width, height)
-		if (maxSide >= model.targetLongSidePx) {
+		if (maxSide >= profile.targetLongSidePx) {
 			return this
 		}
-		val scale = (model.targetLongSidePx.toFloat() / maxSide.toFloat()).coerceAtMost(model.maxUpscaleFactor)
-		if (scale <= model.minUpscaleFactor) {
+		val scale = (profile.targetLongSidePx.toFloat() / maxSide.toFloat()).coerceAtMost(profile.maxUpscaleFactor)
+		if (scale <= profile.minUpscaleFactor) {
 			return this
 		}
 		val scaledWidth = (width * scale).roundToInt().coerceAtLeast(1)
 		val scaledHeight = (height * scale).roundToInt().coerceAtLeast(1)
 		val scaledPixels = scaledWidth.toLong() * scaledHeight.toLong()
-		if (scaledPixels > model.maxOutputPixels || !hasMemoryBudget(scaledWidth, scaledHeight)) {
+		if (scaledPixels > profile.maxOutputPixels || !hasMemoryBudget(scaledWidth, scaledHeight, profile)) {
 			return this
 		}
 		return Bitmap.createScaledBitmap(this, scaledWidth, scaledHeight, true)
 	}
 
-	private fun Bitmap.applyMildEnhancement(): Bitmap {
-		val model = activeProfile()
+	private fun Bitmap.applyMildEnhancement(profile: BundledImageRefinementModel.Profile): Bitmap {
 		val result = copy(Bitmap.Config.ARGB_8888, true)
 		if (nativeImageEnhancer.enhance(
 				bitmap = result,
-				contrast = model.contrast,
-				brightness = model.brightness,
-				saturation = model.saturation,
-				sharpen = model.sharpen,
+				contrast = profile.contrast,
+				brightness = profile.brightness,
+				saturation = profile.saturation,
+				sharpen = profile.sharpen,
 			)
 		) {
 			return result
 		}
-		val translate = ((1f - model.contrast) * 128f) + model.brightness
+		val translate = ((1f - profile.contrast) * 128f) + profile.brightness
 		val contrastMatrix = ColorMatrix(
 			floatArrayOf(
-				model.contrast, 0f, 0f, 0f, translate,
-				0f, model.contrast, 0f, 0f, translate,
-				0f, 0f, model.contrast, 0f, translate,
+				profile.contrast, 0f, 0f, 0f, translate,
+				0f, profile.contrast, 0f, 0f, translate,
+				0f, 0f, profile.contrast, 0f, translate,
 				0f, 0f, 0f, 1f, 0f,
 			),
 		)
 		val saturationMatrix = ColorMatrix().apply {
-			setSaturation(model.saturation)
+			setSaturation(profile.saturation)
 		}
 		contrastMatrix.postConcat(saturationMatrix)
 		val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG or Paint.DITHER_FLAG).apply {
@@ -292,24 +429,31 @@ class ImageEnhancementProcessor @Inject constructor(
 		detectedType?.isImage == true
 	}.getOrDefault(false)
 
-	private fun buildCacheKey(namespace: String, stableKey: String, sourceFile: File): String {
-		val modelKey = activeProfile().cacheKey
-		return "$CACHE_PREFIX:$namespace:$CACHE_VERSION:$modelKey:$stableKey:" +
+	private fun buildCacheKey(
+		namespace: String,
+		stableKey: String,
+		sourceFile: File,
+		profile: BundledImageRefinementModel.Profile,
+	): String {
+		return "$CACHE_PREFIX:$namespace:$CACHE_VERSION:${profile.cacheKey}:$stableKey:" +
 			"${sourceFile.absolutePath}:${sourceFile.length()}:${sourceFile.lastModified()}"
 	}
 
-	private fun MimeType.outputEncodings(allowFormatChange: Boolean): List<OutputEncoding> {
+	private fun MimeType.outputEncodings(
+		allowFormatChange: Boolean,
+		profile: BundledImageRefinementModel.Profile,
+	): List<OutputEncoding> {
 		return when (toString()) {
-			"image/jpeg", "image/jpg" -> jpegEncodings()
-			"image/png" -> if (allowFormatChange) jpegEncodings() else listOf(pngEncoding())
-			else -> if (allowFormatChange) jpegEncodings() else emptyList()
+			"image/jpeg", "image/jpg" -> jpegEncodings(profile)
+			"image/png" -> if (allowFormatChange) jpegEncodings(profile) else listOf(pngEncoding())
+			else -> if (allowFormatChange) jpegEncodings(profile) else emptyList()
 		}
 	}
 
 	private fun pngEncoding() = OutputEncoding(Bitmap.CompressFormat.PNG, PNG_QUALITY, MIME_TYPE_PNG)
 
-	private fun jpegEncodings(): List<OutputEncoding> {
-		val quality = activeProfile().jpegQuality
+	private fun jpegEncodings(profile: BundledImageRefinementModel.Profile): List<OutputEncoding> {
+		val quality = profile.jpegQuality
 		return listOf(
 			OutputEncoding(Bitmap.CompressFormat.JPEG, quality, MIME_TYPE_JPEG),
 			OutputEncoding(Bitmap.CompressFormat.JPEG, (quality - 6).coerceAtLeast(MIN_JPEG_QUALITY), MIME_TYPE_JPEG),
@@ -317,9 +461,9 @@ class ImageEnhancementProcessor @Inject constructor(
 		).distinctBy { it.quality }
 	}
 
-	private fun File.maxEnhancedOutputBytes(): Long {
+	private fun File.maxEnhancedOutputBytes(profile: BundledImageRefinementModel.Profile): Long {
 		val sourceSize = length().coerceAtLeast(MIN_OUTPUT_BYTES)
-		val profileLimit = (sourceSize.toDouble() * activeProfile().maxOutputSizeRatio.toDouble()).roundToLong()
+		val profileLimit = (sourceSize.toDouble() * profile.maxOutputSizeRatio.toDouble()).roundToLong()
 		return profileLimit.coerceAtLeast(MIN_OUTPUT_BYTES)
 	}
 
@@ -341,7 +485,7 @@ class ImageEnhancementProcessor @Inject constructor(
 
 	private companion object {
 		private const val CACHE_PREFIX = "image-enhancement"
-		private const val CACHE_VERSION = 2
+		private const val CACHE_VERSION = 3
 		private const val PNG_QUALITY = 100
 		private val MIME_TYPE_PNG = MimeType("image/png")
 		private val MIME_TYPE_JPEG = MimeType("image/jpeg")
@@ -349,5 +493,8 @@ class ImageEnhancementProcessor @Inject constructor(
 		private const val MIN_OUTPUT_BYTES = 32L * 1024L
 		private const val BYTES_PER_ARGB_PIXEL = 4L
 		private const val WORKING_BITMAP_COUNT = 3L
+		private const val MIN_STRIP_HEIGHT = 512
+		private const val MAX_STRIP_HEIGHT = 4096
+		private const val TALL_PAGE_MIN_HEIGHT_PX = 2400
 	}
 }

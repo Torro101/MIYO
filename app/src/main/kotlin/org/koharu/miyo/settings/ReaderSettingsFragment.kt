@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.preference.ListPreference
 import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
@@ -18,16 +19,35 @@ import org.koharu.miyo.core.prefs.ReaderControl
 import org.koharu.miyo.core.prefs.ReaderMode
 import org.koharu.miyo.core.ui.BasePreferenceFragment
 import org.koharu.miyo.core.util.ext.setDefaultValueCompat
+import org.koharu.miyo.reader.domain.BundledImageRefinementModel
 import org.koitharu.kotatsu.parsers.util.mapToSet
 import org.koitharu.kotatsu.parsers.util.names
 import org.koharu.miyo.settings.utils.MultiSummaryProvider
 import org.koharu.miyo.settings.utils.PercentSummaryProvider
+import org.koharu.miyo.settings.utils.RefinementModelSettingsHelper
 import org.koharu.miyo.settings.utils.SliderPreference
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class ReaderSettingsFragment :
 	BasePreferenceFragment(R.string.reader_settings),
 	SharedPreferences.OnSharedPreferenceChangeListener {
+
+	@Inject
+	lateinit var refinementModel: BundledImageRefinementModel
+
+	private lateinit var refinementModelHelper: RefinementModelSettingsHelper
+
+	private val importModelsLauncher = registerForActivityResult(
+		ActivityResultContracts.OpenDocument(),
+	) { uri ->
+		if (uri != null && isAdded) {
+			refinementModelHelper.importModelsZip(uri)
+			findPreference<ListPreference>(AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL)?.let {
+				refinementModelHelper.bindModelSummary(it)
+			}
+		}
+	}
 
 	override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 		addPreferencesFromResource(R.xml.pref_reader)
@@ -65,11 +85,18 @@ class ReaderSettingsFragment :
 			summaryProvider = MultiSummaryProvider(R.string.disabled)
 		}
 		findPreference<SliderPreference>(AppSettings.KEY_WEBTOON_ZOOM_OUT)?.summaryProvider = PercentSummaryProvider()
+		refinementModelHelper = RefinementModelSettingsHelper(this, refinementModel)
+		findPreference<ListPreference>(AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL)?.let { preference ->
+			refinementModelHelper.bindModelSummary(preference)
+		}
 		updateReaderModeDependency()
 	}
 
 	override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
 		super.onViewCreated(view, savedInstanceState)
+		if (!::refinementModelHelper.isInitialized) {
+			refinementModelHelper = RefinementModelSettingsHelper(this, refinementModel)
+		}
 		settings.subscribe(this)
 	}
 
@@ -85,6 +112,11 @@ class ReaderSettingsFragment :
 				true
 			}
 
+			AppSettings.KEY_IMPORT_REFINEMENT_MODELS -> {
+				importModelsLauncher.launch(RefinementModelSettingsHelper.IMPORT_MIME_TYPES)
+				true
+			}
+
 			else -> super.onPreferenceTreeClick(preference)
 		}
 	}
@@ -92,6 +124,11 @@ class ReaderSettingsFragment :
 	override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
 		when (key) {
 			AppSettings.KEY_READER_MODE -> updateReaderModeDependency()
+			AppSettings.KEY_IMAGE_ENHANCEMENT_MODEL -> {
+				findPreference<ListPreference>(key)?.let {
+					refinementModelHelper.bindModelSummary(it)
+				}
+			}
 		}
 	}
 

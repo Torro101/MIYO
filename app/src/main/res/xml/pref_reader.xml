@@ -115,6 +115,11 @@
 		android:title="@string/image_enhancement_model"
 		app:useSimpleSummaryProvider="true" />
 
+	<Preference
+		android:key="import_refinement_models"
+		android:summary="@string/import_refinement_models_summary"
+		android:title="@string/import_refinement_models" />
+
 	<SwitchPreferenceCompat
 		android:defaultValue="false"
 		android:key="reader_optimize"
