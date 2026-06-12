@@ -42,6 +42,10 @@ class DoublePageHolder(
 			.gravity = (if (isEven) Gravity.START else Gravity.END) or Gravity.BOTTOM
 	}
 
+	// Note: settings.zoomMode is intentionally not applied in double-page
+	// mode. Both pages of a spread must keep an identical scale and stay
+	// anchored to the shared inner edge, which is incompatible with the
+	// FIT_WIDTH / FIT_HEIGHT / KEEP_START behaviors.
 	override fun onReady() {
 		val ssiv = binding.ssiv
 		ssiv.colorFilter = settings.colorFilter?.toColorFilter()

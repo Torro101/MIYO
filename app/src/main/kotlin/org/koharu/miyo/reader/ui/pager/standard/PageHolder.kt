@@ -82,12 +82,16 @@ open class PageHolder(
 		// actually decoded yet, e.g. recycled state). Without this guard the
 		// division produces Infinity/NaN and crashes setScaleAndCenter.
 		val hasSize = ssiv.sWidth > 0 && ssiv.sHeight > 0 && ssiv.width > 0 && ssiv.height > 0
-		if (hasSize) {
-			ssiv.maxScale = 2f * maxOf(
-				ssiv.width / ssiv.sWidth.toFloat(),
-				ssiv.height / ssiv.sHeight.toFloat(),
-			)
+		if (!hasSize) {
+			// Applies to FIT_CENTER as well: resetScaleAndCenter() with invalid
+			// dimensions produces bad scale/center state. SSIV fires onReady()
+			// again once the image is actually decoded.
+			return
 		}
+		ssiv.maxScale = 2f * maxOf(
+			ssiv.width / ssiv.sWidth.toFloat(),
+			ssiv.height / ssiv.sHeight.toFloat(),
+		)
 		when (settings.zoomMode) {
 			ZoomMode.FIT_CENTER -> {
 				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
@@ -95,7 +99,6 @@ open class PageHolder(
 			}
 
 			ZoomMode.FIT_HEIGHT -> {
-				if (!hasSize) return
 				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
 				ssiv.minScale = ssiv.height / ssiv.sHeight.toFloat()
 				ssiv.setScaleAndCenter(
@@ -105,7 +108,6 @@ open class PageHolder(
 			}
 
 			ZoomMode.FIT_WIDTH -> {
-				if (!hasSize) return
 				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CUSTOM
 				ssiv.minScale = ssiv.width / ssiv.sWidth.toFloat()
 				ssiv.setScaleAndCenter(
@@ -115,7 +117,6 @@ open class PageHolder(
 			}
 
 			ZoomMode.KEEP_START -> {
-				if (!hasSize) return
 				ssiv.minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
 				ssiv.setScaleAndCenter(
 					ssiv.maxScale,

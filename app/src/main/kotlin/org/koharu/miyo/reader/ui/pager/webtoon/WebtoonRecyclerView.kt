@@ -162,13 +162,18 @@ class WebtoonRecyclerView @JvmOverloads constructor(
 			return
 		}
 		isFixingScroll = true
-		for (child in this) {
-			val ssiv = (child as? WebtoonFrameLayout)?.target ?: continue
-			if (adjustScroll(child, ssiv)) {
-				break
+		try {
+			for (child in this) {
+				val ssiv = (child as? WebtoonFrameLayout)?.target ?: continue
+				if (adjustScroll(child, ssiv)) {
+					break
+				}
 			}
+		} finally {
+			// If adjustScroll() throws, the flag must still be reset, otherwise
+			// scroll fixing is permanently disabled until the reader is reopened.
+			isFixingScroll = false
 		}
-		isFixingScroll = false
 	}
 
 	private fun adjustScroll(child: View, ssiv: WebtoonImageView): Boolean {

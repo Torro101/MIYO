@@ -2,8 +2,8 @@ package org.koharu.miyo.core.image
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.davemorrissey.labs.subscaleview.decoder.ImageDecodeException
 import org.koharu.miyo.core.util.ext.printStackTraceDebug
-import java.io.ByteArrayOutputStream
 
 /**
  * JNI bridge for native JPEG decoding via libjpeg-turbo.
@@ -67,29 +67,42 @@ object NativeJpegDecoder {
 
     /**
      * Decode with fallback to Android BitmapFactory.
+     *
+     * @param config desired bitmap config. The native libjpeg-turbo path only
+     * produces RGB_565; any other config (e.g. ARGB_8888 when 32-bit colors
+     * are enabled) bypasses the native path and uses the platform decoder.
      * @return decoded Bitmap, never null
      */
-    fun decodeJpegWithFallback(jpegData: ByteArray, sampleSize: Int = 1): Bitmap {
-        if (isAvailable) {
+    fun decodeJpegWithFallback(
+        jpegData: ByteArray,
+        sampleSize: Int = 1,
+        config: Bitmap.Config = Bitmap.Config.RGB_565,
+    ): Bitmap {
+        if (isAvailable && config == Bitmap.Config.RGB_565) {
             // First probe dimensions, then create bitmap and decode
             val dims = probeDimensions(jpegData)
             if (dims != null) {
                 val w = dims.first / sampleSize
                 val h = dims.second / sampleSize
-                val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
-                if (decodeJpeg(jpegData, bitmap)) {
-                    return bitmap
+                // Malformed JPEGs can probe as 0, and a small image with a
+                // large sampleSize can divide down to 0; createBitmap throws
+                // on non-positive dimensions.
+                if (w > 0 && h > 0) {
+                    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
+                    if (decodeJpeg(jpegData, bitmap)) {
+                        return bitmap
+                    }
+                    bitmap.recycle()
                 }
-                bitmap.recycle()
             }
         }
         // Fallback to Android decoder
         val options = BitmapFactory.Options().apply {
-            inPreferredConfig = Bitmap.Config.RGB_565
+            inPreferredConfig = config
             inSampleSize = sampleSize
         }
         return BitmapFactory.decodeByteArray(jpegData, 0, jpegData.size, options)
-            ?: throw RuntimeException("Failed to decode JPEG")
+            ?: throw ImageDecodeException(null, "jpeg")
     }
 
     // JNI native methods

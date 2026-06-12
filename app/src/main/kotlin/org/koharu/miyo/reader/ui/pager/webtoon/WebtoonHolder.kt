@@ -27,7 +27,10 @@ class WebtoonHolder(
 
 	override val ssiv = binding.ssiv
 
-	private var scrollToRestore = 0
+	// Nullable so that a legitimately saved scroll of 0 (top of the page) is
+	// not confused with "no saved scroll" and incorrectly restored to the
+	// bottom when itemView.top < 0.
+	private var scrollToRestore: Int? = null
 
 	init {
 		bindingInfo.progressBar.setVisibilityAfterHide(View.GONE)
@@ -43,14 +46,15 @@ class WebtoonHolder(
 			// scroll dispatcher consume all downward scroll panning through
 			// the page's full internal range, which freezes the webtoon
 			// scroll on tall pages.
+			val savedScroll = scrollToRestore
 			scrollTo(
 				when {
-					scrollToRestore != 0 -> scrollToRestore
+					savedScroll != null -> savedScroll
 					itemView.top < 0 -> getScrollRange()
 					else -> 0
 				},
 			)
-			scrollToRestore = 0
+			scrollToRestore = null
 		}
 		requestParentScrollSync()
 	}
@@ -58,6 +62,13 @@ class WebtoonHolder(
 	override fun onImageLoaded() {
 		super.onImageLoaded()
 		requestParentScrollSync()
+	}
+
+	override fun onRecycled() {
+		// Drop any pending scroll restoration so it cannot be applied to a
+		// different page when this holder is reused after recycling.
+		scrollToRestore = null
+		super.onRecycled()
 	}
 
 	private fun requestParentScrollSync() {

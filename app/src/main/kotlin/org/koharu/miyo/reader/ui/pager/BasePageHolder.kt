@@ -155,13 +155,13 @@ abstract class BasePageHolder<B : ViewBinding>(
 			ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE,
 			ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
 			ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
-			ComponentCallbacks2.TRIM_MEMORY_MODERATE -> {
-				ssiv.recycle()
-				reloadImage()
-			}
+			ComponentCallbacks2.TRIM_MEMORY_MODERATE,
 			ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
 			ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
 				ssiv.recycle()
+				// Reloading immediately would defeat the purpose of the trim.
+				// Only reload while actually visible; otherwise onResume()
+				// restores the image lazily (Shown && !ssiv.isReady).
 				if (isResumed()) {
 					reloadImage()
 				} else if (viewModel.state.value !is PageState.Shown) {

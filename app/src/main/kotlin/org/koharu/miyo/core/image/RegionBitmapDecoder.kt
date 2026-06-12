@@ -69,16 +69,27 @@ class RegionBitmapDecoder(
 
 	/** Compute and set the scaling properties for [BitmapFactory.Options]. */
 	private fun BitmapFactory.Options.configureScale(srcWidth: Int, srcHeight: Int): Rect {
-		val dstWidth = options.size.widthPx(options.scale) { srcWidth }
-		val dstHeight = options.size.heightPx(options.scale) { srcHeight }
+		var dstWidth = options.size.widthPx(options.scale) { srcWidth }
+		var dstHeight = options.size.heightPx(options.scale) { srcHeight }
+		// Coil sizes may carry sentinel values (Int.MIN_VALUE / Int.MAX_VALUE
+		// for Scale.FILL / Scale.FIT undefined dimensions). Fall back to the
+		// source dimension instead of computing a garbage crop region.
+		if (dstWidth <= 0 || dstWidth == Int.MAX_VALUE) {
+			dstWidth = srcWidth
+		}
+		if (dstHeight <= 0 || dstHeight == Int.MAX_VALUE) {
+			dstHeight = srcHeight
+		}
 
 		val srcRatio = srcWidth / srcHeight.toDouble()
 		val dstRatio = dstWidth / dstHeight.toDouble()
+		// Clamp the crop region to the source bounds so decodeRegion() cannot
+		// be called with a rect outside the image.
 		val rect = if (srcRatio < dstRatio) {
 			// probably manga
-			Rect(0, 0, srcWidth, (srcWidth / dstRatio).toInt().coerceAtLeast(1))
+			Rect(0, 0, srcWidth, (srcWidth / dstRatio).toInt().coerceIn(1, srcHeight))
 		} else {
-			Rect(0, 0, (srcHeight / dstRatio).toInt().coerceAtLeast(1), srcHeight)
+			Rect(0, 0, (srcHeight * dstRatio).toInt().coerceIn(1, srcWidth), srcHeight)
 		}
 		val scroll = options.getExtra(regionScrollKey)
 		if (scroll == SCROLL_UNDEFINED) {
@@ -89,7 +100,7 @@ class RegionBitmapDecoder(
 		} else {
 			rect.offsetTo(
 				(srcWidth - rect.width()) / 2,
-				(scroll * dstRatio).toInt().coerceAtMost(srcHeight - rect.height()),
+				(scroll * dstRatio).toInt().coerceIn(0, srcHeight - rect.height()),
 			)
 		}
 

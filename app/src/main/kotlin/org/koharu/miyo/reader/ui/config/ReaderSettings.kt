@@ -73,7 +73,10 @@ data class ReaderSettings(
 	@CheckResult
 	fun applyBitmapConfig(ssiv: SubsamplingScaleImageView): Boolean {
 		val config = bitmapConfig
-		return if (ssiv.regionDecoderFactory.bitmapConfig != config) {
+		// Check both factories: a stale bitmapDecoderFactory would silently
+		// ignore the 32-bit color setting even when the region decoder is
+		// already up to date.
+		return if (ssiv.regionDecoderFactory.bitmapConfig != config || ssiv.bitmapDecoderFactory.bitmapConfig != config) {
 			ssiv.regionDecoderFactory = if (ssiv.context.isLowRamDevice()) {
 				SkiaImageRegionDecoder.Factory(config)
 			} else {

@@ -59,7 +59,10 @@ class WebtoonImageView @JvmOverloads constructor(
 		if (!isReady || sWidth == 0 || sHeight == 0 || width == 0) {
 			return 0
 		}
-		val totalHeight = (sHeight * width / sWidth.toFloat()).roundToInt()
+		// Multiply in Double: sHeight * width is evaluated in Int and can
+		// overflow for very tall strips before the division brings the value
+		// back into range.
+		val totalHeight = (sHeight.toDouble() * width / sWidth.toDouble()).roundToInt()
 		// roundToInt() can saturate to Int.MAX_VALUE for absurdly large
 		// sHeight; clamp negatives and the saturation sentinel.
 		if (totalHeight <= 0 || totalHeight == Int.MAX_VALUE) {

@@ -208,9 +208,11 @@ class PageViewModel(
 			} catch (ce: CancellationException) {
 				throw ce
 			} catch (e2: Throwable) {
-				e2.printStackTrace()
-				e.addSuppressed(e2)
-				state.value = PageState.Error(e)
+				e2.printStackTraceDebug()
+				// Report the conversion failure as the primary error, keeping
+				// the original load error attached for diagnostics.
+				e2.addSuppressed(e)
+				state.value = PageState.Error(e2)
 			}
 		}
 	}
