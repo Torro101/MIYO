@@ -202,12 +202,6 @@ class AlternativeMatcher @Inject constructor() {
 		return (intersection * 100 / union).coerceIn(0, 100)
 	}
 
-	private class TitleKey(raw: String) {
-		val value: String = raw.canonicalTitle().ifEmpty { raw.fallbackCanonicalTitle() }
-		val tokens: Set<String> = value.split(' ').filterTo(LinkedHashSet()) { it.isNotEmpty() }
-		val isShort: Boolean = value.length <= 4 || tokens.size <= 1
-	}
-
 	private fun String.canonicalTitle(): String {
 		val normalized = Normalizer.normalize(this, Normalizer.Form.NFKC)
 		return normalized
@@ -230,6 +224,12 @@ class AlternativeMatcher @Inject constructor() {
 			.replace(NON_WORD_REGEX, " ")
 			.replace(WHITESPACE_REGEX, " ")
 			.trim()
+	}
+
+	private class TitleKey(raw: String) {
+		val value: String = raw.canonicalTitle().ifEmpty { raw.fallbackCanonicalTitle() }
+		val tokens: Set<String> = value.split(' ').filterTo(LinkedHashSet()) { it.isNotEmpty() }
+		val isShort: Boolean = value.length <= 4 || tokens.size <= 1
 	}
 }
 
