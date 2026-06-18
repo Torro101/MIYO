@@ -202,35 +202,35 @@ class AlternativeMatcher @Inject constructor() {
 		return (intersection * 100 / union).coerceIn(0, 100)
 	}
 
-	private fun String.canonicalTitle(): String {
-		val normalized = Normalizer.normalize(this, Normalizer.Form.NFKC)
-		return normalized
-			.lowercase(Locale.ROOT)
-			.replace(BRACKETED_QUALIFIER_REGEX, " ")
-			.replace(PAREN_QUALIFIER_REGEX, " ")
-			.replace('&', ' ')
-			.replace(APOSTROPHE_REGEX, "")
-			.replace(NON_WORD_REGEX, " ")
-			.replace(GENERIC_WORD_REGEX, " ")
-			.replace(WHITESPACE_REGEX, " ")
-			.trim()
-	}
-
-	private fun String.fallbackCanonicalTitle(): String {
-		return Normalizer.normalize(this, Normalizer.Form.NFKC)
-			.lowercase(Locale.ROOT)
-			.replace('&', ' ')
-			.replace(APOSTROPHE_REGEX, "")
-			.replace(NON_WORD_REGEX, " ")
-			.replace(WHITESPACE_REGEX, " ")
-			.trim()
-	}
-
 	private class TitleKey(raw: String) {
-		val value: String = raw.canonicalTitle().ifEmpty { raw.fallbackCanonicalTitle() }
+		val value: String = raw.alternativeCanonicalTitle().ifEmpty { raw.alternativeFallbackCanonicalTitle() }
 		val tokens: Set<String> = value.split(' ').filterTo(LinkedHashSet()) { it.isNotEmpty() }
 		val isShort: Boolean = value.length <= 4 || tokens.size <= 1
 	}
+}
+
+private fun String.alternativeCanonicalTitle(): String {
+	val normalized = Normalizer.normalize(this, Normalizer.Form.NFKC)
+	return normalized
+		.lowercase(Locale.ROOT)
+		.replace(BRACKETED_QUALIFIER_REGEX, " ")
+		.replace(PAREN_QUALIFIER_REGEX, " ")
+		.replace('&', ' ')
+		.replace(APOSTROPHE_REGEX, "")
+		.replace(NON_WORD_REGEX, " ")
+		.replace(GENERIC_WORD_REGEX, " ")
+		.replace(WHITESPACE_REGEX, " ")
+		.trim()
+}
+
+private fun String.alternativeFallbackCanonicalTitle(): String {
+	return Normalizer.normalize(this, Normalizer.Form.NFKC)
+		.lowercase(Locale.ROOT)
+		.replace('&', ' ')
+		.replace(APOSTROPHE_REGEX, "")
+		.replace(NON_WORD_REGEX, " ")
+		.replace(WHITESPACE_REGEX, " ")
+		.trim()
 }
 
 data class AlternativeScore(
