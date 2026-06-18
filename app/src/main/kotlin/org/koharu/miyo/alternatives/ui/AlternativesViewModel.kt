@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
 import org.koharu.miyo.R
 import org.koharu.miyo.alternatives.domain.AlternativesUseCase
@@ -22,7 +23,6 @@ import org.koharu.miyo.core.parser.MangaRepository
 import org.koharu.miyo.core.prefs.ListMode
 import org.koharu.miyo.core.ui.BaseViewModel
 import org.koharu.miyo.core.util.ext.MutableEventFlow
-import org.koharu.miyo.core.util.ext.append
 import org.koharu.miyo.core.util.ext.call
 import org.koharu.miyo.core.util.ext.require
 import org.koharu.miyo.list.domain.MangaListMapper
@@ -124,13 +124,24 @@ class AlternativesViewModel @Inject constructor(
 			val ref = mangaDetails.getOrDefault(manga)
 			val refCount = ref.chaptersCount()
 			alternativesUseCase.invoke(ref, throughDisabledSources)
-				.collect {
+				.collect { candidate ->
+					if (!candidate.score.isDisplayable) {
+						return@collect
+					}
 					val model = MangaAlternativeModel(
-						mangaModel = mangaListMapper.toListModel(it, ListMode.GRID) as MangaGridModel,
+						mangaModel = mangaListMapper.toListModel(candidate.manga, ListMode.GRID) as MangaGridModel,
 						referenceChapters = refCount,
+						score = candidate.score,
 					)
-					results.append(model)
+					results.appendRanked(model)
 				}
+		}
+	}
+
+	private fun MutableStateFlow<List<MangaAlternativeModel>>.appendRanked(model: MangaAlternativeModel) {
+		update { list ->
+			val deduped = list.filterNot { it.manga.id == model.manga.id }
+			(deduped + model).sortedByDescending { it.score.value }
 		}
 	}
 }

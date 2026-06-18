@@ -85,7 +85,6 @@ import org.koharu.miyo.suggestions.domain.TagsBlacklist
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.pow
-import kotlin.random.Random
 import androidx.appcompat.R as appcompatR
 
 @HiltWorker
@@ -216,10 +215,16 @@ class SuggestionsWorker @AssistedInject constructor(
 		suggestionRepository.replace(suggestions)
 		if (appSettings.isSuggestionsNotificationAvailable
 			&& applicationContext.checkNotificationPermission(MANGA_CHANNEL_ID)
+			&& suggestions.isNotEmpty()
 		) {
-			for (i in 0..3) {
+			val notificationCandidates = suggestions
+				.take((suggestions.size / 3).coerceAtLeast(1))
+				.shuffled()
+				.take(NOTIFICATION_CANDIDATE_LIMIT)
+			for (manga in notificationCandidates) {
 				try {
-					val manga = suggestions[Random.nextInt(0, suggestions.size / 3)]
+					// Small result sets are common after filtering; try distinct top
+					// candidates instead of retrying the same unreadable manga.
 					val details = mangaRepositoryFactory.create(manga.manga.source)
 						.getDetails(manga.manga)
 					if (details.chapters.isNullOrEmpty()) {
@@ -464,6 +469,7 @@ class SuggestionsWorker @AssistedInject constructor(
 		const val WORKER_NOTIFICATION_ID = 36
 		const val MAX_RESULTS = 160
 		const val MAX_PARALLELISM = 3
+		const val NOTIFICATION_CANDIDATE_LIMIT = 4
 		const val MAX_SOURCE_RESULTS = 20
 		const val MAX_RAW_RESULTS = 280
 		const val TAG_EQ_THRESHOLD = 0.4f

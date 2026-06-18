@@ -9,45 +9,55 @@ import kotlinx.coroutines.sync.withPermit
 import org.koharu.miyo.core.parser.MangaRepository
 import org.koharu.miyo.core.util.ext.toLocale
 import org.koharu.miyo.explore.data.MangaSourcesRepository
+import org.koharu.miyo.search.domain.SearchKind
+import org.koharu.miyo.search.domain.SearchV2Helper
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaSource
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
-import org.koharu.miyo.search.domain.SearchKind
-import org.koharu.miyo.search.domain.SearchV2Helper
 import java.util.Locale
 import javax.inject.Inject
 
-private const val MAX_PARALLELISM = 4
+private const val SEARCH_PARALLELISM = 4
+private const val DETAILS_PARALLELISM = 4
 
 class AlternativesUseCase @Inject constructor(
 	private val sourcesRepository: MangaSourcesRepository,
 	private val searchHelperFactory: SearchV2Helper.Factory,
 	private val mangaRepositoryFactory: MangaRepository.Factory,
+	private val matcher: AlternativeMatcher,
 ) {
 
-	suspend operator fun invoke(manga: Manga, throughDisabledSources: Boolean): Flow<Manga> {
+	suspend operator fun invoke(manga: Manga, throughDisabledSources: Boolean): Flow<AlternativeCandidate> {
 		val sources = getSources(manga.source, throughDisabledSources)
 		if (sources.isEmpty()) {
 			return emptyFlow()
 		}
-		val semaphore = Semaphore(MAX_PARALLELISM)
+		val searchSemaphore = Semaphore(SEARCH_PARALLELISM)
+		val detailsSemaphore = Semaphore(DETAILS_PARALLELISM)
 		return channelFlow {
 			for (source in sources) {
 				launch {
 					val searchHelper = searchHelperFactory.create(source)
 					val list = runCatchingCancellable {
-						semaphore.withPermit {
+						searchSemaphore.withPermit {
 							searchHelper(manga.title, SearchKind.TITLE)?.manga
 						}
 					}.getOrNull()
-					list?.forEach { m ->
-						if (m.id != manga.id) {
-							launch {
-								val details = runCatchingCancellable {
-									mangaRepositoryFactory.create(m.source).getDetails(m)
-								}.getOrDefault(m)
-								send(details)
-							}
+					val candidates = list.orEmpty()
+						.asSequence()
+						.filter { it.id != manga.id }
+						.map { AlternativeCandidate(it, matcher.score(manga, it)) }
+						.sortedByDescending { it.score.value }
+						.toList()
+					for (candidate in candidates) {
+						launch {
+							val details = runCatchingCancellable {
+								detailsSemaphore.withPermit {
+									mangaRepositoryFactory.create(candidate.manga.source).getDetails(candidate.manga)
+								}
+							}.getOrDefault(candidate.manga)
+							val score = matcher.score(manga, details)
+							send(AlternativeCandidate(details, score))
 						}
 					}
 				}

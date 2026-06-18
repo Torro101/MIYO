@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import org.koharu.miyo.core.model.chaptersCount
 import org.koharu.miyo.core.model.parcelable.ParcelableManga
 import org.koharu.miyo.core.parser.MangaDataRepository
 import org.koharu.miyo.core.parser.MangaRepository
@@ -38,14 +37,15 @@ class AutoFixUseCase @Inject constructor(
 		}
 		val replacement = alternativesUseCase(seed, throughDisabledSources = false)
 			.concat(alternativesUseCase(seed, throughDisabledSources = true))
-			.filter { it.isHealthy() }
-			.runningFold<Manga, Manga?>(null) { best, candidate ->
+			.filter { it.score.isAutoMigrationSafe && it.manga.isHealthy() }
+			.runningFold<AlternativeCandidate, AlternativeCandidate?>(null) { best, candidate ->
 				if (best == null || best < candidate) {
 					candidate
 				} else {
 					best
 				}
 			}.selectLastWithTimeout(4, 40, TimeUnit.SECONDS)
+			?.manga
 		migrateUseCase(seed, replacement ?: throw NoAlternativesException(ParcelableManga(seed)))
 		return seed to replacement
 	}
@@ -62,7 +62,16 @@ class AutoFixUseCase @Inject constructor(
 		mangaRepositoryFactory.create(source).getDetails(this)
 	}.getOrDefault(this)
 
-	private operator fun Manga.compareTo(other: Manga) = chaptersCount().compareTo(other.chaptersCount())
+	private operator fun AlternativeCandidate.compareTo(other: AlternativeCandidate): Int {
+		val scoreCompare = score.value.compareTo(other.score.value)
+		return if (scoreCompare != 0) {
+			scoreCompare
+		} else {
+			// Chapter count closeness is already represented by chapterScore; use
+			// that instead of preferring the candidate with the largest catalogue.
+			score.chapterScore.compareTo(other.score.chapterScore)
+		}
+	}
 
 	@Suppress("UNCHECKED_CAST", "OPT_IN_USAGE")
 	private suspend fun <T> Flow<T>.selectLastWithTimeout(

@@ -33,7 +33,18 @@ object BitmapDecoderCompat {
 	fun decode(file: File): Bitmap = when (val format = probeMimeType(file)?.subtype) {
 		FORMAT_AVIF -> file.source().buffer().use { decodeAvif(it.readByteBuffer()) }
 		else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-			ImageDecoder.decodeBitmap(ImageDecoder.createSource(file))
+			// ImageDecoder rejects some valid-but-marginal images (notably
+			// webps it cannot pixel-fetch) with IOException("getPixels failed
+			// with error invalid input"). BitmapFactory is more tolerant of
+			// such files, so fall back to it before giving up — otherwise a
+			// single webp page fails to convert and renders as a hard error.
+			try {
+				ImageDecoder.decodeBitmap(ImageDecoder.createSource(file))
+			} catch (e: IOException) {
+				checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
+			} catch (e: ImageDecodeException) {
+				checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
+			}
 		} else {
 			checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
 		}
@@ -49,7 +60,7 @@ object BitmapDecoderCompat {
 		// Attempt native JPEG decode for performance (2-6x faster)
 		if (format == "jpeg" || format == "jpg" || type == null) {
 			val bytes = stream.readBytes()
-			val nativeResult = tryNativeJpegDecode(bytes)
+			val nativeResult = tryNativeJpegDecode(bytes, isMutable)
 			if (nativeResult != null) {
 				return nativeResult
 			}
@@ -78,8 +89,8 @@ object BitmapDecoderCompat {
 		}
 	}
 
-	private fun tryNativeJpegDecode(data: ByteArray): Bitmap? {
-		if (!NativeJpegDecoder.isAvailable) return null
+	private fun tryNativeJpegDecode(data: ByteArray, isMutable: Boolean): Bitmap? {
+		if (isMutable || !NativeJpegDecoder.isDecodeEnabled) return null
 		return runCatchingCancellable {
 			NativeJpegDecoder.decodeJpegWithFallback(data)
 		}.getOrNull()

@@ -113,9 +113,18 @@ class WebtoonImageView @JvmOverloads constructor(
 
 	override fun onDownSamplingChanged() {
 		super.onDownSamplingChanged()
+		// A down-sampling change only affects tile resolution, not the image
+		// geometry. Re-applying scale/center (adjustScale) and re-firing
+		// onReady() here re-runs WebtoonHolder.onReady -> scrollTo(...) with
+		// possibly stale/transient sWidth/sHeight/width captured mid-relayout,
+		// which makes the visible page jump to a wrong (enlarged) scale and can
+		// reset the user's scroll position. The jump only clears on a fresh
+		// bind/recycle, hence the "single page suddenly enlarges while
+		// scrolling, reverts on re-read" symptom. Letting SSIV refresh its
+		// tiles without touching scale/scroll avoids it; just keep scroll
+		// clamped to the (unchanged) range.
 		if (isReady) {
-			adjustScale()
-			onImageEventListener.onReady()
+			clampScrollToRange()
 		}
 	}
 

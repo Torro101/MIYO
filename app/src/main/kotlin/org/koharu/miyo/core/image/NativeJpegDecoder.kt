@@ -11,7 +11,12 @@ import org.koharu.miyo.core.util.ext.printStackTraceDebug
  */
 object NativeJpegDecoder {
 
+    private const val ENABLE_UNSAFE_NATIVE_JPEG_DECODE = false
+
     private var nativeAvailable: Boolean? = null
+
+    val isDecodeEnabled: Boolean
+        get() = ENABLE_UNSAFE_NATIVE_JPEG_DECODE && isAvailable
 
     val isAvailable: Boolean
         get() {
@@ -36,7 +41,10 @@ object NativeJpegDecoder {
      * @return true if native decode succeeded
      */
     fun decodeJpeg(jpegData: ByteArray, outBitmap: Bitmap): Boolean {
-        if (!isAvailable) return false
+        // jpeg-bridge.cpp currently writes libjpeg scanlines directly into the
+        // Android bitmap without proving its output format matches RGB_565.
+        // Keep the call behind the same feature gate used by the fallback path.
+        if (!isDecodeEnabled) return false
         return try {
             val width = intArrayOf(0)
             val height = intArrayOf(0)
@@ -78,15 +86,16 @@ object NativeJpegDecoder {
         sampleSize: Int = 1,
         config: Bitmap.Config = Bitmap.Config.RGB_565,
     ): Bitmap {
-        if (isAvailable && config == Bitmap.Config.RGB_565) {
-            // First probe dimensions, then create bitmap and decode
+        if (sampleSize == 1 && isDecodeEnabled && config == Bitmap.Config.RGB_565) {
+            // First probe dimensions, then create bitmap and decode. The native
+            // bridge only supports full-size output; sampled decodes go straight
+            // to BitmapFactory so we do not allocate a bitmap the bridge rejects.
             val dims = probeDimensions(jpegData)
             if (dims != null) {
-                val w = dims.first / sampleSize
-                val h = dims.second / sampleSize
-                // Malformed JPEGs can probe as 0, and a small image with a
-                // large sampleSize can divide down to 0; createBitmap throws
-                // on non-positive dimensions.
+                val w = dims.first
+                val h = dims.second
+                // Malformed JPEGs can probe as 0; createBitmap throws on
+                // non-positive dimensions.
                 if (w > 0 && h > 0) {
                     val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
                     if (decodeJpeg(jpegData, bitmap)) {
