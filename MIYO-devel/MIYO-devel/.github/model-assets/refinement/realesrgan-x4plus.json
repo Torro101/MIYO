@@ -1,0 +1,18 @@
+{
+  "id": "realesrgan-x4plus",
+  "version": 1,
+  "description": "RealESRGAN x4plus refinement profile. Rank 1: best all-around choice for mixed content (colored webtoons, comics, manga, covers).",
+  "targetLongSidePx": 2048,
+  "minUpscaleFactor": 1.05,
+  "maxUpscaleFactor": 1.5,
+  "contrast": 1.06,
+  "brightness": 2.0,
+  "saturation": 1.05,
+  "sharpen": 0.3,
+  "jpegQuality": 90,
+  "maxOutputSizeRatio": 1.35,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 24000000,
+  "maxOutputPixels": 26000000,
+  "maxWorkingMemoryMb": 320
+}

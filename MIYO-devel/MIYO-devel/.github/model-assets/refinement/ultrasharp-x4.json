@@ -1,0 +1,18 @@
+{
+  "id": "ultrasharp-x4",
+  "version": 1,
+  "description": "4x-UltraSharp refinement profile. Rank 2: extremely sharp text, line art, speech bubbles and comic panels; can occasionally oversharpen webtoons.",
+  "targetLongSidePx": 2304,
+  "minUpscaleFactor": 1.05,
+  "maxUpscaleFactor": 1.5,
+  "contrast": 1.1,
+  "brightness": 1.5,
+  "saturation": 1.02,
+  "sharpen": 0.55,
+  "jpegQuality": 92,
+  "maxOutputSizeRatio": 1.4,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 20000000,
+  "maxOutputPixels": 24000000,
+  "maxWorkingMemoryMb": 320
+}

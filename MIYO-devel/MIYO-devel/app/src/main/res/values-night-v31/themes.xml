@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<style name="Base.V31.Miyo" parent="Base.V27.Miyo">
+		<item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+		<item name="android:windowSplashScreenAnimationDuration">@integer/splash_screen_duration</item>
+		<item name="android:windowSplashScreenBackground">@color/miyo_splash_background</item>
+	</style>
+
+	<style name="Theme.Miyo.AppWidgetContainer" parent="@android:style/Theme.DeviceDefault.DayNight">
+		<item name="android:colorBackground">@color/m3_ref_palette_dynamic_secondary20</item>
+		<item name="android:panelColorBackground">@color/m3_ref_palette_dynamic_secondary40</item>
+		<item name="colorTertiary">@color/m3_ref_palette_dynamic_secondary40</item>
+	</style>
+
+</resources>

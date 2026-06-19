@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<style name="Base.V27.Miyo" parent="Base.V23.Miyo">
+		<item name="android:windowLightNavigationBar">@bool/light_navigation_bar</item>
+		<item name="android:navigationBarColor">@android:color/transparent</item>
+	</style>
+
+	<style name="Theme.Miyo" parent="Base.V27.Miyo" />
+
+</resources>

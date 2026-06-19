@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:title="@string/downloads">
+
+	<PreferenceCategory android:title="@string/section_storage">
+
+		<Preference
+			android:key="local_manga_dirs"
+			android:persistent="false"
+			android:title="@string/local_manga_directories" />
+
+		<Preference
+			android:key="local_storage"
+			android:persistent="false"
+			android:title="@string/manga_save_location" />
+
+	</PreferenceCategory>
+
+	<PreferenceCategory android:title="@string/section_downloading">
+
+		<ListPreference
+			android:entries="@array/download_formats"
+			android:key="downloads_format"
+			android:title="@string/preferred_download_format"
+			app:useSimpleSummaryProvider="true" />
+
+		<ListPreference
+			android:defaultValue="0"
+			android:entries="@array/download_parallelism_options"
+			android:entryValues="@array/download_parallelism_values"
+			android:key="downloads_parallelism"
+			android:summary="@string/download_parallelism_summary"
+			android:title="@string/download_parallelism"
+			app:useSimpleSummaryProvider="true" />
+
+		<SwitchPreferenceCompat
+			android:defaultValue="false"
+			android:key="download_high_speed"
+			android:summary="@string/download_high_speed_summary"
+			android:title="@string/download_high_speed" />
+
+		<ListPreference
+			android:entries="@array/metered_network_options"
+			android:key="downloads_metered_network"
+			android:title="@string/download_over_cellular"
+			app:useSimpleSummaryProvider="true" />
+
+		<Preference
+			android:icon="@drawable/ic_info_outline"
+			android:key="tracker_notifications_info"
+			android:persistent="false"
+			android:selectable="false"
+			android:summary="@string/downloads_settings_info" />
+
+		<Preference
+			android:key="ignore_dose"
+			android:persistent="false"
+			android:summary="@string/disable_battery_optimization_summary_downloads"
+			android:title="@string/disable_battery_optimization"
+			app:isPreferenceVisible="false" />
+
+	</PreferenceCategory>
+
+	<PreferenceCategory android:title="@string/section_image_enhancement">
+
+		<SwitchPreferenceCompat
+			android:defaultValue="false"
+			android:key="download_image_enhancement"
+			android:summary="@string/download_image_enhancement_summary"
+			android:title="@string/download_image_enhancement" />
+
+		<ListPreference
+			android:defaultValue="realesrgan-x4plus"
+			android:dependency="download_image_enhancement"
+			android:entries="@array/image_enhancement_models"
+			android:entryValues="@array/image_enhancement_model_values"
+			android:key="image_enhancement_model"
+			android:summary="@string/image_enhancement_model_summary"
+			android:title="@string/image_enhancement_model" />
+
+		<Preference
+			android:dependency="download_image_enhancement"
+			android:key="import_refinement_models"
+			android:summary="@string/import_refinement_models_summary"
+			android:title="@string/import_refinement_models" />
+
+		<SwitchPreferenceCompat
+			android:defaultValue="true"
+			android:dependency="download_image_enhancement"
+			android:key="delete_original_after_refinement"
+			android:summary="@string/delete_original_after_refinement_summary"
+			android:title="@string/delete_original_after_refinement" />
+
+	</PreferenceCategory>
+
+	<PreferenceCategory android:title="@string/pages_saving">
+
+		<Preference
+			android:key="pages_dir"
+			android:persistent="false"
+			android:title="@string/default_page_save_dir" />
+
+		<SwitchPreferenceCompat
+			android:defaultValue="true"
+			android:key="pages_dir_ask"
+			android:title="@string/ask_for_dest_dir_every_time" />
+
+	</PreferenceCategory>
+
+</PreferenceScreen>

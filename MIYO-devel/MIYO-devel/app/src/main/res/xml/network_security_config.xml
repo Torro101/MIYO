@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config
+	xmlns:tools="http://schemas.android.com/tools">
+	<!-- Default: secure by default, no cleartext, no user CAs -->
+	<base-config
+		cleartextTrafficPermitted="false">
+		<trust-anchors>
+			<certificates src="system" />
+		</trust-anchors>
+	</base-config>
+
+	<!-- Allow cleartext only for legacy manga sources that need it -->
+	<domain-config cleartextTrafficPermitted="true">
+		<domain includeSubdomains="true">mangadex.org</domain>
+		<domain includeSubdomains="true">mangadex.network</domain>
+		<domain includeSubdomains="true">localhost</domain>
+		<trust-anchors>
+			<certificates src="system" />
+		</trust-anchors>
+	</domain-config>
+
+	<!-- Certificate pinning for critical APIs -->
+	<domain-config>
+		<domain includeSubdomains="true">api.mangadex.org</domain>
+		<pin-set expiration="2027-01-01">
+			<!-- Let's Encrypt R3 -->
+			<pin digest="SHA-256">8Rw90Ej3Ttt8RRkrg+WYDS9n7I03JQ4JoDTa2VFT2Ck=</pin>
+			<!-- Let's Encrypt E1 -->
+			<pin digest="SHA-256">J2/oqMTsdhFWW/nKtKbKfGNFmGQz+0LQHThRqMmVm/o=</pin>
+			<!-- Google Trust Services GTS CA 1C3 -->
+			<pin digest="SHA-256">zCTnfLw3b6rFw2W+2s+X0hWx/gQqYhvmN4JhKZ/ano8=</pin>
+		</pin-set>
+	</domain-config>
+
+	<!-- Debug-only: trust user CAs, stripped in release by manifestPlaceholders -->
+	<debug-overrides
+		tools:replace="trust-anchors">
+		<trust-anchors>
+			<certificates src="system" />
+			<certificates src="user" />
+		</trust-anchors>
+	</debug-overrides>
+</network-security-config>

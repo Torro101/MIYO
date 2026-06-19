@@ -1,0 +1,18 @@
+{
+  "id": "realesrgan-x4plus-anime-6b",
+  "version": 1,
+  "description": "RealESRGAN x4plus Anime 6B refinement profile. Rank 3: best for black-and-white manga and anime-style artwork; preserves line art very well.",
+  "targetLongSidePx": 2048,
+  "minUpscaleFactor": 1.05,
+  "maxUpscaleFactor": 1.5,
+  "contrast": 1.08,
+  "brightness": 2.5,
+  "saturation": 1.0,
+  "sharpen": 0.4,
+  "jpegQuality": 90,
+  "maxOutputSizeRatio": 1.35,
+  "minSourcePixels": 4096,
+  "maxSourcePixels": 24000000,
+  "maxOutputPixels": 26000000,
+  "maxWorkingMemoryMb": 288
+}

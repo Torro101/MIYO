@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+	<!-- Base application theme. -->
+	<style name="Base.Theme.Miyo" parent="Theme.Material3.DayNight.NoActionBar">
+
+		<!-- Theme Colors -->
+		<item name="colorPrimary">@color/miyo_primary</item>
+		<item name="colorPrimaryContainer">@color/miyo_primaryContainer</item>
+		<item name="colorOnPrimary">@color/miyo_onPrimary</item>
+		<item name="colorOnPrimaryContainer">@color/miyo_onPrimaryContainer</item>
+		<item name="colorPrimaryInverse">@color/miyo_inversePrimary</item>
+		<item name="colorSecondary">@color/miyo_secondary</item>
+		<item name="colorSecondaryContainer">@color/miyo_secondaryContainer</item>
+		<item name="colorOnSecondary">@color/miyo_onSecondary</item>
+		<item name="colorOnSecondaryContainer">@color/miyo_onSecondaryContainer</item>
+		<item name="colorTertiary">@color/miyo_tertiary</item>
+		<item name="colorTertiaryContainer">@color/miyo_tertiaryContainer</item>
+		<item name="colorOnTertiary">@color/miyo_onTertiary</item>
+		<item name="colorOnTertiaryContainer">@color/miyo_onTertiaryContainer</item>
+		<item name="colorSurface">@color/miyo_surface</item>
+		<item name="colorSurfaceDim">@color/miyo_surfaceDim</item>
+		<item name="colorSurfaceBright">@color/miyo_surfaceBright</item>
+		<item name="colorSurfaceContainerLowest">@color/miyo_surfaceContainerLowest</item>
+		<item name="colorSurfaceContainerLow">@color/miyo_surfaceContainerLow</item>
+		<item name="colorSurfaceContainer">@color/miyo_surfaceContainer</item>
+		<item name="colorSurfaceContainerHigh">@color/miyo_surfaceContainerHigh</item>
+		<item name="colorSurfaceContainerHighest">@color/miyo_surfaceContainerHighest</item>
+		<item name="colorSurfaceVariant">@color/miyo_surfaceVariant</item>
+		<item name="colorOnSurface">@color/miyo_onSurface</item>
+		<item name="colorOnSurfaceVariant">@color/miyo_onSurfaceVariant</item>
+		<item name="colorSurfaceInverse">@color/miyo_inverseSurface</item>
+		<item name="colorOnSurfaceInverse">@color/miyo_inverseOnSurface</item>
+		<item name="colorOnBackground">@color/miyo_onSurface</item>
+		<item name="colorError">@color/error</item>
+		<item name="colorErrorContainer">@color/errorContainer</item>
+		<item name="colorOnError">@color/onError</item>
+		<item name="colorOnErrorContainer">@color/onErrorContainer</item>
+		<item name="colorOutline">@color/miyo_outline</item>
+		<item name="colorOutlineVariant">@color/miyo_outline</item>
+		<item name="colorControlNormal">@color/miyo_onSurface</item>
+		<item name="colorControlActivated">@color/miyo_primary</item>
+		<item name="colorControlHighlight">@color/selector_overlay</item>
+		<item name="android:colorControlNormal">@color/miyo_onSurface</item>
+		<item name="android:colorControlActivated">@color/miyo_primary</item>
+		<item name="android:colorControlHighlight">@color/selector_overlay</item>
+		<item name="android:textColorPrimary">@color/miyo_onSurface</item>
+		<item name="android:textColorSecondary">@color/miyo_onSurfaceVariant</item>
+
+		<!-- Drawables (icons) -->
+		<item name="actionModeCloseDrawable">@drawable/abc_ic_clear_material</item>
+		<item name="actionModeWebSearchDrawable">@drawable/abc_ic_search_api_material</item>
+		<item name="expandCollapseIndicator">@drawable/m3_split_button_chevron_avd</item>
+
+		<!-- Base attributes -->
+		<item name="android:statusBarColor">@color/dim</item>
+		<item name="android:navigationBarColor">@color/surface_amoled</item>
+		<item name="android:navigationBarDividerColor" tools:targetApi="o_mr1">@null</item>
+		<item name="android:enforceNavigationBarContrast" tools:targetApi="Q">false</item>
+		<item name="android:enforceStatusBarContrast" tools:targetApi="Q">false</item>
+		<item name="windowActionModeOverlay">true</item>
+
+		<!-- System components styles -->
+		<item name="android:alertDialogTheme">@style/ThemeOverlay.Miyo.AlertDialog</item>
+		<item name="alertDialogTheme">@style/ThemeOverlay.Miyo.AlertDialog</item>
+		<item name="bottomSheetDialogTheme">@style/ThemeOverlay.Miyo.BottomSheetDialog</item>
+		<item name="sideSheetDialogTheme">@style/ThemeOverlay.Miyo.SideSheetDialog</item>
+		<item name="recyclerViewStyle">@style/Widget.Miyo.RecyclerView</item>
+		<item name="android:dropDownSpinnerStyle">@style/Widget.Miyo.Spinner.DropDown</item>
+		<item name="switchPreferenceCompatStyle">@style/Preference.SwitchPreferenceCompat.M3</item>
+		<item name="circularProgressIndicatorStyle">@style/Widget.Miyo.CircularProgressIndicator</item>
+		<item name="linearProgressIndicatorStyle">@style/Widget.Miyo.LinearProgressIndicator</item>
+		<item name="bottomSheetDragHandleStyle">@style/Widget.Miyo.BottomSheet.DragHandle</item>
+		<item name="preferenceTheme">@style/PreferenceThemeOverlay.Miyo</item>
+		<!-- Fix crash in A15 -->
+		<item name="actionButtonStyle">@style/Widget.AppCompat.ActionButton</item>
+
+		<!-- Custom views -->
+		<item name="fastScrollerStyle">@style/Widget.Miyo.FastScroller</item>
+		<item name="listItemTextViewStyle">@style/Widget.Miyo.ListItemTextView</item>
+		<item name="dotIndicatorStyle">@style/Widget.Miyo.DotIndicator</item>
+		<item name="badgeViewStyle">@style/Widget.Miyo.BadgeView</item>
+		<item name="coverImageViewStyle">@style/Widget.Miyo.ImageView.Cover</item>
+	</style>
+
+	<!--== Default Theme ==-->
+	<style name="Theme.Miyo" parent="Base.Theme.Miyo" />
+
+	<!-- Base ThemeOverlay -->
+	<style name="ThemeOverlay.Miyo" parent="ThemeOverlay.Material3.Light" />
+
+	<!-- Changes only for night -->
+	<style name="ThemeOverlay.Miyo.Amoled" parent="" />
+
+	<!-- App Widgets -->
+
+	<style name="Theme.Miyo.AppWidgetContainer" parent="@style/Theme.MaterialComponents.Light">
+		<item name="android:colorBackground">@color/miyo_background</item>
+		<item name="android:panelColorBackground">@color/miyo_primaryContainer</item>
+	</style>
+</resources>

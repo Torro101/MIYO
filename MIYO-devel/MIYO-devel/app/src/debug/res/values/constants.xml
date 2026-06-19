@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="account_type_sync" translatable="false">org.miyo.debug.sync</string>
+	<string name="sync_authority_history" translatable="false">org.koharu.miyo.debug.history</string>
+	<string name="sync_authority_favourites" translatable="false">org.koharu.miyo.debug.favourites</string>
+</resources>

@@ -1,0 +1,12 @@
+package org.koharu.miyo.browser.cloudflare
+
+import org.koharu.miyo.browser.BrowserCallback
+
+interface CloudFlareCallback : BrowserCallback {
+
+	override fun onTitleChanged(title: CharSequence, subtitle: CharSequence?) = Unit
+
+	fun onPageLoaded()
+
+	fun onCheckPassed()
+}

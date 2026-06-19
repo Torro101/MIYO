@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:drawable="@drawable/ic_miyo_slime_splash">
+
+	<target
+		android:name="slime_motion"
+		android:animation="@animator/miyo_splash_motion" />
+
+	<target
+		android:name="slime_aura"
+		android:animation="@animator/miyo_splash_aura" />
+
+	<target
+		android:name="bubbles"
+		android:animation="@animator/miyo_splash_bubbles" />
+
+	<target
+		android:name="bubble_left"
+		android:animation="@animator/miyo_splash_bubble_fade" />
+
+	<target
+		android:name="bubble_right"
+		android:animation="@animator/miyo_splash_bubble_fade" />
+
+	<target
+		android:name="bubble_top"
+		android:animation="@animator/miyo_splash_bubble_fade" />
+
+</animated-vector>

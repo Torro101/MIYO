@@ -1,0 +1,268 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+	id 'com.android.application'
+	id 'kotlin-android'
+	id 'com.google.devtools.ksp'
+	id 'kotlin-parcelize'
+	id 'dagger.hilt.android.plugin'
+	id 'androidx.room'
+	id 'org.jetbrains.kotlin.plugin.serialization'
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+	localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
+def propertyOrDefault = { name, defaultValue ->
+	def value = providers.gradleProperty(name).orNull
+	if (value == null || value.trim().isEmpty()) {
+		value = localProperties.getProperty(name)
+	}
+	return value == null || value.trim().isEmpty() ? defaultValue : value
+}
+
+def buildConfigString = { value ->
+	def escaped = String.valueOf(value)
+		.replace('\\', '\\\\')
+		.replace('"', '\\"')
+	return "\"${escaped}\""
+}
+
+def appApplicationId = propertyOrDefault('app.applicationId', 'org.koharu.miyo')
+def appDisplayName = propertyOrDefault('app.displayName', 'Miyo')
+def appUpdatesRepo = propertyOrDefault('app.updatesRepo', 'Torro101/MIYO')
+def appSourceUrl = propertyOrDefault('app.sourceUrl', "https://github.com/${appUpdatesRepo}")
+def appIconUrl = propertyOrDefault(
+	'app.iconUrl',
+	"https://raw.githubusercontent.com/${appUpdatesRepo}/refs/heads/main/.github/assets/icon.png"
+)
+def appReleaseCertSha256 = propertyOrDefault(
+	'app.releaseCertSha256',
+	'4C0BD9188836B7279DCF91123AC99DC4F54FE221FB66FB9203803D167E066FC9'
+)
+def releaseStoreFile = propertyOrDefault('release.storeFile', '')
+def releaseStorePassword = propertyOrDefault('release.storePassword', '')
+def releaseKeyAlias = propertyOrDefault('release.keyAlias', '')
+def releaseKeyPassword = propertyOrDefault('release.keyPassword', '')
+def hasReleaseSigning = [
+	releaseStoreFile,
+	releaseStorePassword,
+	releaseKeyAlias,
+	releaseKeyPassword
+].every { !String.valueOf(it).trim().isEmpty() }
+
+android {
+	compileSdk = 36
+	buildToolsVersion = '36.1.0'
+	namespace = 'org.koharu.miyo'
+
+	defaultConfig {
+		applicationId = appApplicationId
+		minSdk = 21
+		targetSdk = 36
+		versionCode = 13
+		versionName = '0.0.5-1'
+		generatedDensities = []
+		testInstrumentationRunner = 'org.koharu.miyo.HiltTestRunner'
+		ksp {
+			arg('room.generateKotlin', 'true')
+		}
+		androidResources {
+			// https://issuetracker.google.com/issues/408030127
+			generateLocaleConfig = false
+		}
+		resValue 'string', 'app_name', appDisplayName
+		resValue 'string', 'url_github', appSourceUrl
+		resValue 'string', 'github_updates_repo', appUpdatesRepo
+		resValue 'string', 'app_icon_url', appIconUrl
+		resValue 'string', 'account_type_sync', "${appApplicationId}.sync"
+		resValue 'string', 'sync_authority_history', "${appApplicationId}.history"
+		resValue 'string', 'sync_authority_favourites', "${appApplicationId}.favourites"
+		resValue 'string', 'tg_backup_bot_token', localProperties.getProperty('tg_backup_bot_token', '')
+		buildConfigField 'String', 'UPDATES_REPO', buildConfigString(appUpdatesRepo)
+		buildConfigField 'String', 'RELEASE_CERT_SHA256', buildConfigString(appReleaseCertSha256)
+	}
+	signingConfigs {
+		if (hasReleaseSigning) {
+			release {
+				storeFile = file(releaseStoreFile)
+				storePassword = releaseStorePassword
+				keyAlias = releaseKeyAlias
+				keyPassword = releaseKeyPassword
+			}
+		}
+	}
+	buildTypes {
+		debug {
+			applicationIdSuffix = '.debug'
+		}
+		release {
+			if (hasReleaseSigning) {
+				signingConfig = signingConfigs.release
+			}
+			minifyEnabled = true
+			shrinkResources = true
+			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+		}
+	}
+	buildFeatures {
+		viewBinding = true
+		buildConfig = true
+	}
+	packaging {
+		jniLibs {
+			useLegacyPackaging = true
+		}
+		resources {
+			excludes += [
+				'META-INF/README.md',
+				'META-INF/NOTICE.md',
+				'META-INF/LICENSE',
+				'META-INF/LICENSE.md',
+				'DebugProbesKt.bin'
+			]
+		}
+	}
+	sourceSets {
+		androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
+		main.java.srcDirs += 'src/main/kotlin/'
+	}
+	compileOptions {
+		coreLibraryDesugaringEnabled = true
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+	}
+	kotlin {
+		compilerOptions {
+			jvmTarget.set(JvmTarget.JVM_17)
+			freeCompilerArgs.addAll(
+				"-opt-in=kotlin.ExperimentalStdlibApi",
+				"-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+				"-opt-in=kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi",
+				"-opt-in=kotlinx.coroutines.InternalForInheritanceCoroutinesApi",
+				"-opt-in=kotlinx.coroutines.FlowPreview",
+				"-opt-in=kotlin.contracts.ExperimentalContracts",
+				"-opt-in=coil3.annotation.ExperimentalCoilApi",
+				"-opt-in=coil3.annotation.InternalCoilApi",
+				"-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
+				"-Xjspecify-annotations=strict",
+				"-Xannotation-default-target=first-only",
+				"-Xtype-enhancement-improvements-strict-mode"
+			)
+		}
+	}
+	room {
+		schemaDirectory "$projectDir/schemas"
+	}
+	lint {
+		abortOnError = true
+		disable 'MissingTranslation', 'PrivateResource', 'SetJavaScriptEnabled', 'SimpleDateFormat'
+	}
+	ndkVersion = '27.0.12077973'
+	externalNativeBuild {
+		cmake {
+			path = file('src/main/cpp/CMakeLists.txt')
+		}
+	}
+	testOptions {
+		unitTests.includeAndroidResources = true
+		unitTests.returnDefaultValues = false
+		kotlin {
+			compilerOptions {
+				freeCompilerArgs.add(
+					"-opt-in=org.koitharu.kotatsu.parsers.InternalParsersApi"
+				)
+			}
+		}
+	}
+}
+dependencies {
+	implementation libs.jsoup
+	implementation libs.core.exts
+	coreLibraryDesugaring libs.desugar.jdk.libs
+	implementation libs.kotlin.stdlib
+	implementation libs.kotlinx.coroutines.android
+	implementation libs.kotlinx.coroutines.guava
+
+	implementation libs.androidx.appcompat
+	implementation libs.androidx.core
+	implementation libs.androidx.activity
+	implementation libs.androidx.fragment
+	implementation libs.androidx.transition
+	implementation libs.androidx.collection
+	implementation libs.lifecycle.viewmodel
+	implementation libs.lifecycle.service
+	implementation libs.lifecycle.process
+	implementation libs.androidx.constraintlayout
+	implementation libs.androidx.documentfile
+	implementation libs.androidx.swiperefreshlayout
+	implementation libs.androidx.recyclerview
+	implementation libs.androidx.viewpager2
+	implementation libs.androidx.preference
+	implementation libs.androidx.biometric
+	implementation libs.material
+	implementation libs.androidx.lifecycle.common.java8
+	implementation libs.androidx.webkit
+
+	implementation libs.androidx.work.runtime
+	implementation libs.guava
+
+	// Foldable/Window layout
+	implementation libs.androidx.window
+
+	implementation libs.androidx.room.runtime
+	implementation libs.androidx.room.ktx
+	ksp libs.androidx.room.compiler
+
+	implementation libs.okhttp
+	implementation libs.okhttp.tls
+	implementation libs.okhttp.dnsoverhttps
+	implementation libs.okio
+	implementation libs.kotlinx.serialization.json
+
+	implementation libs.adapterdelegates
+	implementation libs.adapterdelegates.viewbinding
+
+	implementation libs.hilt.android
+	ksp libs.hilt.compiler
+	implementation libs.androidx.hilt.work
+	ksp libs.androidx.hilt.compiler
+
+	implementation libs.coil.core
+	implementation libs.coil.network
+	implementation libs.coil.gif
+	implementation libs.coil.svg
+	implementation libs.avif.decoder
+	implementation libs.ssiv
+	implementation libs.disk.lru.cache
+	implementation libs.markwon
+	implementation libs.kizzyrpc
+
+	implementation libs.acra.http
+	implementation libs.acra.dialog
+
+	implementation libs.conscrypt.android
+
+	debugImplementation libs.leakcanary.android
+	debugImplementation libs.workinspector
+
+	testImplementation libs.junit
+	testImplementation libs.json
+	testImplementation libs.kotlinx.coroutines.test
+
+	androidTestImplementation libs.androidx.runner
+	androidTestImplementation libs.androidx.rules
+	androidTestImplementation libs.androidx.test.core
+	androidTestImplementation libs.androidx.junit
+
+	androidTestImplementation libs.kotlinx.coroutines.test
+
+	androidTestImplementation libs.androidx.room.testing
+	androidTestImplementation libs.moshi.kotlin
+
+	androidTestImplementation libs.hilt.android.testing
+	kspAndroidTest libs.hilt.android.compiler
+}

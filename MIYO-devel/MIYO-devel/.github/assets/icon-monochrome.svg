@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" role="img" aria-label="Miyo monochrome app icon">
+  <rect width="108" height="108" rx="24" fill="#081217"/>
+  <path fill="#fff" d="M20 27v59h25c4.4 1.7 7 4.4 9 9 2-4.6 4.6-7.3 9-9h25V27c-14 1.8-25.4 7.1-34 18C45.4 34.1 34 28.8 20 27Zm8 9c9.5 2 16.9 5.8 22 13v30c-6.2-3.1-13.5-5.2-22-7V36Zm52 0v36c-8.5 1.8-15.8 3.9-22 7V49c5.1-7.2 12.5-11 22-13Z"/>
+  <path fill="#fff" d="M43 52h23v6H43Zm-4 10h31v6H39Zm6 9h19c-2.5 4.4-5.8 7.6-10 9.8-4.2-2.2-7.5-5.4-9-9.8Z"/>
+</svg>
