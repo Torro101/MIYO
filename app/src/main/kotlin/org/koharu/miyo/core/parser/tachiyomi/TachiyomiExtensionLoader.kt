@@ -279,7 +279,7 @@ class TachiyomiExtensionLoader {
                 }
 
                 // Find the shortest constructor (least dependencies)
-                val ctor = constructors.minByOrNull { it.parameterCount }!!
+                val ctor = constructors.minByOrNull { it.parameterTypes.size }!!
                 ctor.isAccessible = true
 
                 val args = ctor.parameterTypes.map { paramType ->
