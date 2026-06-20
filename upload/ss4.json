@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is the **manga details/info screen** (or manga page) in a manga reader app. The UI displays the manga’s progress (Chapter 36 of 48), key stats (48 chapters, 245 MB size, English language), a description, genre tags (Action, Fantasy, Supernatural), and related manga recommendations. A prominent “Continue” button at the bottom allows resuming reading, with navigation icons (menu, grid, bookmark) and a “Set to Private” option in the top bar.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952935,
+  "id": "20260620185531d2d88a54ae4241e9",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260620185531d2d88a54ae4241e9",
+  "usage": {
+    "completion_tokens": 106,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1541,
+    "prompt_tokens_details": {
+      "cached_tokens": 5
+    },
+    "total_tokens": 1647
+  }
+}

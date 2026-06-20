@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is the **Explore tab** in a manga reader app. The UI features a dark theme with a search bar at the top, a \"Manga sources\" section (with icons for platforms like MangaDex, Webtoon, etc.), a \"Featured this week\" manga promotion, and a bottom navigation bar with tabs for Home, Favorites, Explore (active), Feed, and History.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952942,
+  "id": "2026062018553854aace20494342d9",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "2026062018553854aace20494342d9",
+  "usage": {
+    "completion_tokens": 81,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1541,
+    "prompt_tokens_details": {
+      "cached_tokens": 5
+    },
+    "total_tokens": 1622
+  }
+}

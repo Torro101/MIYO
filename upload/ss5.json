@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is the **Home/Explore tab** of a manga reader app. The UI features a dark theme with a top search bar, a \"Quick Access\" section (with shortcuts like \"Local storage,\" \"Bookmarks,\" \"Random,\" \"Downloads\"), a \"Suggestions\" carousel (showing manga like *Raijin's Fury*), and a bottom navigation bar with tabs for Home, Favorites, Explore (active), Feed, and History.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952938,
+  "id": "20260620185536b408732d15974550",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260620185536b408732d15974550",
+  "usage": {
+    "completion_tokens": 91,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1541,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1632
+  }
+}

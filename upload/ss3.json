@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is the **manga details/info screen** in a manga reader app. The UI displays the manga’s cover, title (*Raijin's Fury*), source (MangaDex), progress (75% through Chapter 36 of 48), key stats (chapters, size, language), a truncated description, and a prominent “Continue” button to resume reading. Top navigation includes options like “Set to Private,” share/download icons, and a back arrow.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952930,
+  "id": "2026062018552765a042515be24021",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "2026062018552765a042515be24021",
+  "usage": {
+    "completion_tokens": 97,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1541,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1638
+  }
+}

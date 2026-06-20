@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 270 14% 4%;
+    --foreground: 270 20% 95%;
+    --card: 270 16% 8%;
+    --card-foreground: 270 20% 95%;
+    --popover: 270 16% 8%;
+    --popover-foreground: 270 20% 95%;
+    --primary: 25 50% 62%;
+    --primary-foreground: 270 14% 4%;
+    --secondary: 270 16% 12%;
+    --secondary-foreground: 270 20% 95%;
+    --muted: 270 12% 16%;
+    --muted-foreground: 260 10% 55%;
+    --accent: 25 50% 62%;
+    --accent-foreground: 270 14% 4%;
+    --destructive: 0 40% 57%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 270 12% 16%;
+    --input: 270 16% 12%;
+    --ring: 25 50% 62%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-mantra-bg text-mantra-text font-sans antialiased;
+    overscroll-behavior-y: none;
+  }
+}
+
+@layer components {
+  .shimmer {
+    background: linear-gradient(
+      135deg,
+      #1E1923 0%,
+      rgba(240, 236, 244, 0.03) 50%,
+      #1E1923 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+
+  .ambient-glow::before {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(ellipse at center, rgba(212, 148, 106, 0.15) 0%, transparent 70%);
+    animation: breathe 4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .ambient-glow-bg {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(212, 148, 106, 0.12) 0%, transparent 70%);
+    animation: breathe 4s ease-in-out infinite;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch feedback */
+  .touch-feedback {
+    transition: transform 0.1s ease, background-color 0.15s ease;
+  }
+
+  .touch-feedback:active {
+    transform: scale(0.96);
+  }
+}

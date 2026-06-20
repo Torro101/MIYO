@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This is the **Feed** (or home/updates) tab in a manga reader app. The UI features a dark theme with a search bar at the top, category tabs (e.g., \"All,\" \"Read later\"), sections for \"Updates\" (showing manga covers with chapter counts) and \"Today\" (new chapter notifications), and a bottom navigation bar with icons for Home, Favorites, Explore, Feed, and History.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952945,
+  "id": "20260620185542207b8b4e1a6d446d",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260620185542207b8b4e1a6d446d",
+  "usage": {
+    "completion_tokens": 89,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1541,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1630
+  }
+}

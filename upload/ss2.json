@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "This screen is a **manga details page** (likely from a manga reader app, e.g., MangaDex or a similar platform) displaying information about the manga *Raijin's Fury*.  \n\n### UI Breakdown:  \n- **Top Bar**: Contains navigation (back arrow), version selector (`v2`), file/folder icons, refresh, and a “Set to Private” button.  \n- **Manga Cover & Title**: A cover image of *Raijin's Fury* (with a stormy, lightning-themed design) is centered, with the title below it.  \n- **Metadata**: Shows the source (*MangaDex*), status (*Ongoing*), reading progress (75%, Chapter 36 of 48), and key stats (48 Chapters, 245 MB size, English Language).  \n- **Description Section**: A truncated synopsis of the manga’s plot (“A legendary swordsman wielding the power of thunder seeks vengeance…”) with a “Read more” option to expand.  \n- **Action Button**: A prominent orange “Continue” button (with a play icon) to resume reading.  \n- **Additional Icons**: Share, download, and menu (three dots) buttons at the top right of the cover.  \n\n\nThe UI is dark-themed, focusing on presenting manga details, progress, and a clear call-to-action to continue reading.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1781952917,
+  "id": "20260620185511acab4a6ed78d4e9f",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260620185511acab4a6ed78d4e9f",
+  "usage": {
+    "completion_tokens": 281,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1530,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 1811
+  }
+}
