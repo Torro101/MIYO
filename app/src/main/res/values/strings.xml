@@ -955,7 +955,7 @@
         <string name="delete_plugin">Delete plugin</string>
         <string name="deleted_plugin">Deleted %1$s plugin!</string>
         <string name="import_from_github">Import from GitHub</string>
-        <string name="import_github_summary">You can enter a full GitHub URL or Username/Repository. Miyo will automatically find and install the plugin from the latest release.</string>
+        <string name="import_github_summary">Enter a GitHub URL (Username/Repository) to install a JAR plugin from the latest release, or a Keiyoushi extension index URL (ending with index.min.json) to install all available extensions from that repository.</string>
         <string name="jar_not_loaded">JAR not loaded: %1$s</string>
         <string name="load_failed">Failed to load plugin</string>
         <string name="load_from_storage">Import from local storage</string>
@@ -1029,5 +1029,4 @@
     <string name="keiyoushi_invalid_repo_url">Invalid repository URL. It must start with http:// or https:// and end with index.min.json</string>
     <string name="keiyoushi_manage_repos">Manage repositories</string>
     <string name="keiyoushi_confirm_uninstall">Are you sure you want to uninstall %1$s?</string>
-    <string name="keiyoushi_source_count">%1$d sources</string>
 </resources>

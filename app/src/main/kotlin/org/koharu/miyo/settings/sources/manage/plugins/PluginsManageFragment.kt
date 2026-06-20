@@ -28,7 +28,6 @@ import org.koharu.miyo.core.util.ext.addMenuProvider
 import org.koharu.miyo.core.util.ext.container
 import org.koharu.miyo.core.util.ext.end
 import org.koharu.miyo.core.util.ext.start
-import org.koharu.miyo.core.nav.router
 import org.koharu.miyo.databinding.DialogImportBinding
 import org.koharu.miyo.databinding.FragmentSettingsSourcesBinding
 import org.koharu.miyo.main.ui.owners.AppBarOwner
@@ -137,10 +136,6 @@ class PluginsManageFragment :
 				askOverwrite = ::askOverwrite,
 				onResult = ::showImportResult
 			)
-		}
-		binding.buttonKeiyoushi.setOnClickListener {
-			dialog.dismiss()
-			router.openKeiyoushiBrowse()
 		}
 		dialog.show()
 	}

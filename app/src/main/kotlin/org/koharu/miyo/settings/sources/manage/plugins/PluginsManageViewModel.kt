@@ -2,6 +2,7 @@ package org.koharu.miyo.settings.sources.manage.plugins
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.core.content.edit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,6 +21,7 @@ import org.koharu.miyo.core.model.PluginSourceKeyNormalizer
 import org.koharu.miyo.core.network.BaseHttpClient
 import org.koharu.miyo.core.parser.DynamicParserManager
 import org.koharu.miyo.core.parser.PluginFileLoader
+import org.koharu.miyo.core.parser.tachiyomi.KeiyoushiRepositoryManager
 import org.koharu.miyo.core.ui.BaseViewModel
 import org.koharu.miyo.filter.data.SavedFiltersRepository
 import org.json.JSONArray
@@ -42,6 +44,10 @@ class PluginsManageViewModel @Inject constructor(
 	val content = MutableStateFlow<List<PluginManageItem>>(emptyList())
 	private val prefs by lazy {
 		context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+	}
+
+	private val repoManager by lazy {
+		KeiyoushiRepositoryManager(context, okHttpClient)
 	}
 
 	@Volatile
@@ -80,6 +86,63 @@ class PluginsManageViewModel @Inject constructor(
 		query = value?.trim().orEmpty()
 		publishFiltered()
 	}
+
+	/**
+	 * Detect if the input is a Keiyoushi extension index URL.
+	 * These URLs end with `index.min.json` or `index.json`.
+	 */
+	fun isKeiyoushiIndexUrl(input: String): Boolean {
+		val trimmed = input.trim().removeSuffix("/")
+		return (trimmed.startsWith("http://") || trimmed.startsWith("https://")) &&
+			(trimmed.endsWith("index.min.json") || trimmed.endsWith("index.json"))
+	}
+
+	/**
+	 * Import all extensions from a Keiyoushi repository index URL.
+	 * Fetches the index, then downloads and installs each extension APK.
+	 * Returns the count of successfully installed extensions, or -1 on failure.
+	 */
+	suspend fun importFromKeiyoushiRepo(indexUrl: String): Int = withContext(Dispatchers.IO) {
+		try {
+			val trimmed = indexUrl.trim().removeSuffix("/")
+			val baseUrl = repoManager.deriveBaseUrl(trimmed)
+
+			// Fetch the index
+			val extensions = repoManager.fetchIndex(trimmed)
+			if (extensions.isNullOrEmpty()) {
+				Log.w(TAG, "No extensions found in Keiyoushi repo: $trimmed")
+				return@withContext -1
+			}
+
+			Log.i(TAG, "Found ${extensions.size} extensions in Keiyoushi repo, installing...")
+
+			// Install each extension
+			var installed = 0
+			for (ext in extensions) {
+				val extWithBaseUrl = ext.withBaseUrl(baseUrl)
+				val result = repoManager.installExtension(extWithBaseUrl)
+				if (result != null) {
+					installed++
+					Log.i(TAG, "Installed Keiyoushi extension: ${ext.displayName}")
+				} else {
+					Log.w(TAG, "Failed to install Keiyoushi extension: ${ext.displayName}")
+				}
+			}
+
+			// Save the repo URL so it is remembered
+			repoManager.addRepoUrl(trimmed)
+
+			// Reload all parsers so installed extensions are available
+			DynamicParserManager.loadParsersFromDirectory(context, PluginFileLoader.pluginsDir(context))
+			PluginSourceKeyNormalizer.normalize(database, savedFiltersRepository)
+
+			Log.i(TAG, "Keiyoushi repo import complete: $installed/${extensions.size} extensions installed")
+			installed
+		} catch (e: Exception) {
+			Log.e(TAG, "Failed to import from Keiyoushi repo: $indexUrl", e)
+			-1
+		}
+	}.also { if (it > 0) refresh() }
 
 	suspend fun resolveGithubRelease(input: String): ExternalPluginDto? = withContext(Dispatchers.Default) {
 		val repository = normalizeRepository(input) ?: return@withContext null
@@ -143,6 +206,17 @@ class PluginsManageViewModel @Inject constructor(
 	) {
 		launchJob(Dispatchers.Default) {
 			val input = askInput()?.trim()?.takeIf { it.isNotBlank() } ?: return@launchJob
+
+			// Check if this is a Keiyoushi extension index URL
+			if (isKeiyoushiIndexUrl(input)) {
+				val count = importFromKeiyoushiRepo(input)
+				withContext(Dispatchers.Main) {
+					onResult(count > 0)
+				}
+				return@launchJob
+			}
+
+			// Otherwise, treat as GitHub repository
 			val release = resolveGithubRelease(input)
 			if (release == null) {
 				withContext(Dispatchers.Main) { onResult(false) }
@@ -208,7 +282,7 @@ class PluginsManageViewModel @Inject constructor(
 		}
 		val filtered = all.filter { plugin ->
 			plugin.jarName.contains(q, ignoreCase = true) ||
-					plugin.repository?.contains(q, ignoreCase = true) == true
+				plugin.repository?.contains(q, ignoreCase = true) == true
 		}
 		content.value = filtered.ifEmpty {
 			listOf(PluginManageItem.Placeholder(titleResId = R.string.nothing_found, summaryResId = null))
@@ -252,7 +326,7 @@ class PluginsManageViewModel @Inject constructor(
 				val pathSegments = response.request.url.pathSegments
 				val tagIndex = pathSegments.indexOf("tag")
 				val tag = if (tagIndex >= 0) pathSegments.getOrNull(tagIndex + 1)
-				          else pathSegments.lastOrNull()
+					  else pathSegments.lastOrNull()
 				tag?.takeIf { it.isNotBlank() }
 			}
 		}.getOrNull()

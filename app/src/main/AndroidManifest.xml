@@ -173,10 +173,6 @@
 			</intent-filter>
 		</activity>
 		<activity
-			android:name="org.koharu.miyo.settings.sources.keiyoushi.KeiyoushiBrowseActivity"
-			android:exported="false"
-			android:label="@string/keiyoushi_browse" />
-		<activity
 			android:name="org.koharu.miyo.settings.sources.PluginActivity"
 			android:excludeFromRecents="true"
 			android:exported="true"
