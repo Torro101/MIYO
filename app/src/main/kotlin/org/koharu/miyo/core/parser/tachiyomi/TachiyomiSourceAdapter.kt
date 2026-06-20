@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Headers
 import okhttp3.Interceptor
+import okhttp3.Response
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
 import org.koitharu.kotatsu.parsers.MangaParser
 import org.koitharu.kotatsu.parsers.config.MangaSourceConfig
@@ -89,7 +90,7 @@ class TachiyomiSourceAdapter(
 			when {
 				filter.query != null -> {
 					// Search mode
-					val query = filter.query
+					val query = filter.query ?: ""
 					searchManga(page, query, httpSource.getFilterList())
 				}
 				order == SortOrder.UPDATED && httpSource.supportsLatest -> {
@@ -186,6 +187,17 @@ class TachiyomiSourceAdapter(
 		// fetchRelatedMangaList is not available in the bundled AAR version of HttpSource.
 		// Return empty list — related manga is not supported via Tachiyomi extensions.
 		return emptyList()
+	}
+
+	override suspend fun getList(query: org.koitharu.kotatsu.parsers.model.MangaSearchQuery): List<Manga> {
+		val text = query.query ?: return emptyList()
+		val page = 1
+		return searchManga(page, text, httpSource.getFilterList())
+	}
+
+	override suspend fun resolveLink(resolver: org.koitharu.kotatsu.parsers.util.LinkResolver, link: okhttp3.HttpUrl): Manga? {
+		// Link resolution is not supported for Tachiyomi extensions
+		return null
 	}
 
 	override fun getRequestHeaders(): Headers {

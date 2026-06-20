@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object PluginErrorHandler {
 
-        private const val TAG = "PluginErrorHandler"
+        @PublishedApi internal const val TAG = "PluginErrorHandler"
 
         /** Maximum errors to keep per plugin before trimming. */
         private const val MAX_ERRORS_PER_PLUGIN = 10
@@ -157,7 +157,7 @@ object PluginErrorHandler {
          * Execute a block safely, catching any exceptions and recording them.
          * Returns null on failure instead of throwing.
          */
-        inline fun <T> runSafely(pluginName: String, method: String, block: () -> T): T? {
+        fun <T> runSafely(pluginName: String, method: String, block: () -> T): T? {
                 return try {
                         val result = block()
                         // Clear errors on success — plugin recovered
@@ -182,7 +182,7 @@ object PluginErrorHandler {
         /**
          * Execute a block safely with a default value on failure.
          */
-        inline fun <T> runSafely(pluginName: String, method: String, defaultValue: T, block: () -> T): T {
+        fun <T> runSafely(pluginName: String, method: String, defaultValue: T, block: () -> T): T {
                 return runSafely(pluginName, method, block) ?: defaultValue
         }
 
