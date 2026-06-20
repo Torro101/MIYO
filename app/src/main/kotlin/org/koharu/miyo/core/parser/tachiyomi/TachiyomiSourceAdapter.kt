@@ -195,9 +195,13 @@ class TachiyomiSourceAdapter(
 
 	@Suppress("DEPRECATION")
 	override suspend fun getList(query: org.koitharu.kotatsu.parsers.model.search.MangaSearchQuery): List<Manga> {
-		val text = query.query?.takeIf { it.isNotBlank() } ?: return emptyList()
-		val page = 1
-		return searchManga(page, text, httpSource.getFilterList())
+		// Extract search text from QueryCriteria
+		val searchText = query.criteria
+			.filterIsInstance<org.koitharu.kotatsu.parsers.model.search.QueryCriteria.Match>()
+			.firstOrNull()?.value
+			?: return emptyList()
+		val page = (query.offset / ITEMS_PER_PAGE) + 1
+		return searchManga(page, searchText, httpSource.getFilterList())
 	}
 
 	@OptIn(org.koitharu.kotatsu.parsers.InternalParsersApi::class)
