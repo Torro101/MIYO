@@ -42,9 +42,9 @@ fun sourceCatalogItemSourceAD(
 		binding.imageViewVisibility.contentDescription = context.getString(
 			if (hidden) R.string.show else R.string.hide_from_main_screen
 		)
-		binding.imageViewVisibility.tooltipText = context.getString(
+		binding.imageViewVisibility.setTooltipCompat(context.getString(
 			if (hidden) R.string.show else R.string.hide_from_main_screen
-		)
+		))
 		// Dim the item when hidden
 		binding.root.alpha = if (hidden) 0.5f else 1.0f
 	}
