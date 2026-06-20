@@ -25,6 +25,7 @@ import org.koharu.miyo.core.model.MangaSourceInfo
 import org.koharu.miyo.core.model.MangaSourceRegistry
 import org.koharu.miyo.core.model.PluginMangaSource
 import org.koharu.miyo.core.model.getTitle
+import org.koharu.miyo.core.model.defaultPriority
 import org.koharu.miyo.core.model.isNsfw
 import org.koharu.miyo.core.parser.external.ExternalMangaSource
 import org.koharu.miyo.core.prefs.AppSettings

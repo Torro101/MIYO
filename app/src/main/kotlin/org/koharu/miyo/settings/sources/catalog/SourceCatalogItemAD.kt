@@ -34,6 +34,21 @@ fun sourceCatalogItemSourceAD(
 		listener.onItemClick(item, v)
 	}
 
+	// Helper to update the visibility eye icon
+	fun updateVisibilityIcon(hidden: Boolean) {
+		binding.imageViewVisibility.setImageResource(
+			if (hidden) R.drawable.ic_eye_off else R.drawable.ic_eye
+		)
+		binding.imageViewVisibility.contentDescription = context.getString(
+			if (hidden) R.string.show else R.string.hide_from_main_screen
+		)
+		binding.imageViewVisibility.tooltipText = context.getString(
+			if (hidden) R.string.show else R.string.hide_from_main_screen
+		)
+		// Dim the item when hidden
+		binding.root.alpha = if (hidden) 0.5f else 1.0f
+	}
+
 	// Long press: toggle hidden state via eye icon
 	var isHidden = false
 	binding.imageViewVisibility.setOnClickListener {
@@ -66,20 +81,6 @@ fun sourceCatalogItemSourceAD(
 		}
 		FaviconDrawable(context, R.style.FaviconDrawable_Small, item.source.name)
 		binding.imageViewIcon.setImageAsync(item.source)
-	}
-
-	fun updateVisibilityIcon(hidden: Boolean) {
-		binding.imageViewVisibility.setImageResource(
-			if (hidden) R.drawable.ic_eye_off else R.drawable.ic_eye
-		)
-		binding.imageViewVisibility.contentDescription = context.getString(
-			if (hidden) R.string.show else R.string.hide_from_main_screen
-		)
-		binding.imageViewVisibility.tooltipText = context.getString(
-			if (hidden) R.string.show else R.string.hide_from_main_screen
-		)
-		// Dim the item when hidden
-		binding.root.alpha = if (hidden) 0.5f else 1.0f
 	}
 }
 
