@@ -451,6 +451,7 @@ class PluginsManageViewModel @Inject constructor(
 	)
 
 	private companion object {
+		const val TAG = "PluginsManageVM"
 		const val PREFS_NAME = "plugins_manage"
 		const val PREFS_KEY_GITHUB_META = "github_meta"
 		const val JSON_KEY_REPOSITORY = "repository"
