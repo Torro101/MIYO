@@ -64,7 +64,7 @@ android {
 		minSdk = 21
 		targetSdk = 36
 		versionCode = 13
-		versionName = '0.0.5-1'
+		versionName = '0.0.6-beta'
 		generatedDensities = []
 		testInstrumentationRunner = 'org.koharu.miyo.HiltTestRunner'
 		ksp {
