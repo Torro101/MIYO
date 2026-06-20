@@ -1,7 +1,5 @@
 package org.koitharu.kotatsu.parsers.model
 
-import org.koitharu.kotatsu.parsers.model.ContentType
-
 /**
  * Stub implementation of MangaParserSource for MIYO.
  *
@@ -13,10 +11,10 @@ import org.koitharu.kotatsu.parsers.model.ContentType
  * Tachiyomi/Keiyoushi extensions use [KeiyoushiMangaSource] for identity instead.
  */
 public enum class MangaParserSource(
-	public val title: String,
-	public val locale: String,
-	public val contentType: ContentType,
-	public val isBroken: Boolean,
+	public override val title: String,
+	public override val locale: String,
+	public override val contentType: ContentType,
+	public override val isBroken: Boolean,
 ) : MangaSource {
 
 	MIYO_PLACEHOLDER("MIYO", "", ContentType.MANGA, false),
