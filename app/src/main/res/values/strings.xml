@@ -1006,4 +1006,21 @@
         <string name="section_performance">Performance &amp; data</string>
         <string name="section_storage">Storage</string>
         <string name="section_downloading">Downloading</string>
+
+    <!-- Dual plugin architecture: hide/source management -->
+    <string name="extension_type_keiyoushi">Keiyoushi</string>
+    <string name="source_hidden">Source hidden from explore</string>
+    <string name="source_shown">Source shown in explore</string>
+    <string name="hide_source">Hide from explore</string>
+    <string name="show_source">Show in explore</string>
+    <string name="provider_jar">JAR Plugin</string>
+    <string name="provider_keiyoushi">Keiyoushi Extension</string>
+    <string name="provider_builtin">Built-in</string>
+    <string name="filter_all_sources">All</string>
+    <string name="filter_jar_plugins">JAR Plugins</string>
+    <string name="filter_keiyoushi_extensions">Keiyoushi</string>
+    <string name="filter_builtin_sources">Built-in</string>
+    <string name="duplicate_sources_detected">Multiple sources detected for the same site</string>
+    <string name="source_priority_keiyoushi">Keiyoushi (priority)</string>
+    <string name="source_priority_jar">JAR Plugin</string>
 </resources>

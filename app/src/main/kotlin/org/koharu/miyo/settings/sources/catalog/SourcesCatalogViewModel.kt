@@ -92,6 +92,12 @@ class SourcesCatalogViewModel @Inject constructor(
 		}
 	}
 
+	fun toggleHidden(source: MangaSource, isHidden: Boolean) {
+		launchJob(Dispatchers.Default) {
+			repository.setSourceHidden(source, isHidden)
+		}
+	}
+
 	fun setContentType(value: ContentType, isAdd: Boolean) {
 		val filter = appliedFilter.value
 		val types = EnumSet.noneOf(ContentType::class.java)

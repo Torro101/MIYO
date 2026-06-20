@@ -42,6 +42,7 @@ import org.koharu.miyo.core.db.migrations.Migration23To24
 import org.koharu.miyo.core.db.migrations.Migration24To25
 import org.koharu.miyo.core.db.migrations.Migration25To26
 import org.koharu.miyo.core.db.migrations.Migration26To27
+import org.koharu.miyo.core.db.migrations.Migration27To28
 import org.koharu.miyo.core.db.migrations.Migration2To3
 import org.koharu.miyo.core.db.migrations.Migration3To4
 import org.koharu.miyo.core.db.migrations.Migration4To5
@@ -69,7 +70,7 @@ import org.koharu.miyo.tracker.data.TrackEntity
 import org.koharu.miyo.tracker.data.TrackLogEntity
 import org.koharu.miyo.tracker.data.TracksDao
 
-const val DATABASE_VERSION = 27
+const val DATABASE_VERSION = 28
 
 @Database(
 	entities = [
@@ -140,6 +141,7 @@ fun getDatabaseMigrations(context: Context): Array<Migration> = arrayOf(
 	Migration24To25(),
 	Migration25To26(),
 	Migration26To27(),
+	Migration27To28(),
 )
 
 fun MangaDatabase(context: Context): MangaDatabase = Room

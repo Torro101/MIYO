@@ -22,7 +22,7 @@ import java.util.Locale
 
 data class PluginMangaSource(val delegate: MangaSource, val jarName: String) : MangaSource {
     override val name: String
-        get() = "$jarName:${delegate.name}"
+        get() = "jar:$jarName:${delegate.name}"
 
     val sourceName: String
         get() = delegate.name
@@ -69,25 +69,38 @@ fun MangaSource(name: String?): MangaSource {
                 val parts = name.substringAfter(':').splitTwoParts('/') ?: return UnknownMangaSource
                 return ExternalMangaSource(packageName = parts.first, authority = parts.second)
         }
+        // 1. Try exact namespaced name match (jar:..., keiyoushi:..., builtin:...)
         MangaSourceRegistry.sources.forEach {
                 if (it.name == name) return it
         }
+        // 2. Try legacy compound name match (pre-namespace: "1.jar:MANGADEX")
+        if (name.contains(':') && !name.startsWith("jar:") && !name.startsWith("keiyoushi:")) {
+                // Old format "jarName:sourceName" -> try "jar:jarName:sourceName"
+                val namespaced = "jar:$name"
+                MangaSourceRegistry.sources.forEach {
+                        if (it.name == namespaced) return it
+                }
+                // Also try clean name after last colon
+                val cleanName = name.substringAfter(":")
+                MangaSourceRegistry.sources.forEach {
+                        if (it is PluginMangaSource && it.sourceName == cleanName) return it
+                        if (it is KeiyoushiMangaSource && it.sourceNameOnly == cleanName) return it
+                }
+        }
+        // 3. Try bare source name match (legacy backup without any prefix)
         MangaSourceRegistry.sources.forEach {
                 if (it is PluginMangaSource && it.sourceName == name) return it
                 if (it is KeiyoushiMangaSource && it.sourceNameOnly == name) return it
         }
-    // Backward compatibility for loaded database items saved as '1.jar:MANGADEX'
-        if (name.contains(':')) {
-        val cleanName = name.substringAfter(":")
-        MangaSourceRegistry.sources.forEach {
-            if (it.name == cleanName) return it
-            if (it is PluginMangaSource && it.sourceName == cleanName) return it
-        }
-    }
         return UnresolvedMangaSource(name)
 }
 
 fun String.toBackupSourceName(): String {
+        // Preserve full namespaced name for accurate restore
+        if (startsWith("jar:") || startsWith("keiyoushi:") || startsWith("builtin:")) {
+                return this
+        }
+        // Legacy format: keep as-is for backward compatibility
         return when (val src = MangaSource(this)) {
                 is PluginMangaSource -> src.sourceName
                 is KeiyoushiMangaSource -> src.sourceNameOnly
@@ -99,6 +112,22 @@ fun String.toBackupSourceName(): String {
 fun Collection<String>.toMangaSources() = map(::MangaSource)
 
 fun MangaSource.isNsfw(): Boolean = contentType == ContentType.HENTAI
+
+/** Default priority based on provider system. Keiyoushi=10, JAR=5, others=0. */
+val MangaSource.defaultPriority: Int
+    get() = when (this) {
+        is KeiyoushiMangaSource -> 10
+        is PluginMangaSource -> 5
+        else -> 0
+    }
+
+/** Provider namespace prefix for this source. */
+val MangaSource.providerPrefix: String
+    get() = when (this) {
+        is KeiyoushiMangaSource -> "keiyoushi"
+        is PluginMangaSource -> "jar"
+        else -> "builtin"
+    }
 
 @get:StringRes
 val ContentType.titleResId
@@ -132,7 +161,8 @@ fun MangaSource.getSummary(context: Context): String? {
                 this is KeiyoushiMangaSource -> {
                         val type = context.getString(R.string.extension_type_keiyoushi)
                         val loc = locale.toLocaleOrNull()?.getDisplayLanguage(Locale.getDefault()) ?: context.getString(R.string.content_type_other)
-                        "$type • $loc"
+                        val badge = "KEI"
+                        "$badge • $type • $loc"
                 }
                 this === LocalMangaSource || this === TestMangaSource || this === UnknownMangaSource -> null
                 else -> {
@@ -147,7 +177,8 @@ fun MangaSource.getSummary(context: Context): String? {
                 else -> null
         }
         return if (pluginSource != null && baseSummary != null) {
-                "$baseSummary • ${pluginSource.jarName}"
+                val badge = "JAR"
+                "$badge • $baseSummary • ${pluginSource.jarName}"
         } else pluginSource?.jarName ?: baseSummary
 }
 

@@ -11,10 +11,11 @@ import org.koharu.miyo.list.ui.model.ListModel
 
 class SourcesCatalogAdapter(
 	listener: OnListItemClickListener<SourceCatalogItem.Source>,
+	onHideToggle: ((org.koitharu.kotatsu.parsers.model.MangaSource, Boolean) -> Unit)? = null,
 ) : BaseListAdapter<ListModel>(), FastScroller.SectionIndexer {
 
 	init {
-		addDelegate(ListItemType.CHAPTER_LIST, sourceCatalogItemSourceAD(listener))
+		addDelegate(ListItemType.CHAPTER_LIST, sourceCatalogItemSourceAD(listener, onHideToggle))
 		addDelegate(ListItemType.HINT_EMPTY, sourceCatalogItemHintAD())
 		addDelegate(ListItemType.STATE_LOADING, loadingStateAD())
 	}

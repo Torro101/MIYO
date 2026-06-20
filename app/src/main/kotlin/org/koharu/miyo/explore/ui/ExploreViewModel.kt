@@ -169,7 +169,7 @@ class ExploreViewModel @Inject constructor(
 				buttonTextRes = if (allSourcesEnabled) R.string.manage else R.string.catalog,
 				badge = if (!allSourcesEnabled && hasNewSources) "" else null,
 			)
-			sources.mapTo(result) { MangaSourceItem(it, isGrid) }
+			sources.filter { !it.isHidden }.mapTo(result) { MangaSourceItem(it, isGrid) }
 		} else {
 			result += EmptyHint(
 				icon = R.drawable.ic_empty_common,

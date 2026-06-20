@@ -293,7 +293,7 @@ class KeiyoushiMangaSource(
 	override val locale: String,
 ) : MangaSource {
 
-	override val name: String = "$apkFileName:$sourceName"
+	override val name: String = "keiyoushi:$apkFileName:$sourceName"
 
 	val sourceNameOnly: String get() = sourceName
 

@@ -14,11 +14,13 @@ import org.koharu.miyo.core.util.ext.getThemeDimensionPixelOffset
 import org.koharu.miyo.core.util.ext.setTextAndVisible
 import org.koharu.miyo.databinding.ItemEmptyHintBinding
 import org.koharu.miyo.databinding.ItemSourceCatalogBinding
+import org.koitharu.kotatsu.parsers.model.MangaSource
 import org.koharu.miyo.list.ui.model.ListModel
 import androidx.appcompat.R as appcompatR
 
 fun sourceCatalogItemSourceAD(
-	listener: OnListItemClickListener<SourceCatalogItem.Source>
+	listener: OnListItemClickListener<SourceCatalogItem.Source>,
+	onHideToggle: ((MangaSource, Boolean) -> Unit)? = null,
 ) = adapterDelegateViewBinding<SourceCatalogItem.Source, ListModel, ItemSourceCatalogBinding>(
 	{ layoutInflater, parent ->
 		ItemSourceCatalogBinding.inflate(layoutInflater, parent, false)
@@ -31,6 +33,21 @@ fun sourceCatalogItemSourceAD(
 	binding.root.setOnClickListener { v ->
 		listener.onItemClick(item, v)
 	}
+
+	// Long press: toggle hidden state via eye icon
+	var isHidden = false
+	binding.imageViewVisibility.setOnClickListener {
+		isHidden = !isHidden
+		updateVisibilityIcon(isHidden)
+		onHideToggle?.invoke(item.source, isHidden)
+	}
+	binding.root.setOnLongClickListener {
+		isHidden = !isHidden
+		updateVisibilityIcon(isHidden)
+		onHideToggle?.invoke(item.source, isHidden)
+		true
+	}
+
 	val basePadding = context.getThemeDimensionPixelOffset(
 		appcompatR.attr.listPreferredItemPaddingEnd,
 		binding.root.paddingStart,
@@ -49,6 +66,20 @@ fun sourceCatalogItemSourceAD(
 		}
 		FaviconDrawable(context, R.style.FaviconDrawable_Small, item.source.name)
 		binding.imageViewIcon.setImageAsync(item.source)
+	}
+
+	fun updateVisibilityIcon(hidden: Boolean) {
+		binding.imageViewVisibility.setImageResource(
+			if (hidden) R.drawable.ic_eye_off else R.drawable.ic_eye
+		)
+		binding.imageViewVisibility.contentDescription = context.getString(
+			if (hidden) R.string.show else R.string.hide_from_main_screen
+		)
+		binding.imageViewVisibility.tooltipText = context.getString(
+			if (hidden) R.string.show else R.string.hide_from_main_screen
+		)
+		// Dim the item when hidden
+		binding.root.alpha = if (hidden) 0.5f else 1.0f
 	}
 }
 
