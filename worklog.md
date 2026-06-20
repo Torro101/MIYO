@@ -72,3 +72,66 @@ Stage Summary:
 - Flash on memory trim: Fixed by deferring reload to onResume instead of immediate
 - Scroll position loss on recycle: Fixed by preserving scroll across recycle/reload cycles
 - Layout thrashing: Fixed by deferring requestLayout in adjustScale
+
+---
+Task ID: 4
+Agent: Main Agent
+Task: Analyze keiyoushi extensions, plan integration, implement support in MIYO app
+
+Work Log:
+- Analyzed MIYO's existing dual-plugin architecture (JAR + ContentProvider-based)
+- Cloned keiyoushi/extensions repo (1,378 APK extensions analyzed)
+- Analyzed keiyoushi APK format: DEX with HttpSource/SourceFactory, AndroidManifest metadata
+- Downloaded keiyoushi extensions-lib AAR from JitPack (com.github.keiyoushi:extensions-lib:18a8e26be2)
+- Analyzed the full Tachiyomi source API surface via class file decompilation
+- Added keiyoushi extensions-lib AAR + RxJava 1.x + Injekt + QuickJS dependencies to build.gradle
+- Added ProGuard rules for Tachiyomi API classes
+- Created TachiyomiModelMapper: Bidirectional mapper between Tachiyomi (SManga, SChapter, Page) and Kotatsu (Manga, MangaChapter, MangaPage) models
+- Created TachiyomiExtensionLoader: Core engine that loads APK extensions via DexClassLoader, parses AndroidManifest metadata, instantiates HttpSource/SourceFactory
+- Created TachiyomiClassLoader: Child-first DexClassLoader for Tachiyomi extensions with proper delegation
+- Created TachiyomiSourceAdapter: Wraps HttpSource as MangaParser with full method translation and error handling
+- Created KeiyoushiRepositoryManager: Fetches index.json, downloads/installs extension APKs
+- Created PluginErrorHandler: Centralized error tracking for all plugin types with deduplication and user-friendly messages
+- Updated DynamicParserManager: Now supports both JAR and APK sources with dual loading paths
+- Updated PluginActivity: Now accepts APK files (Keiyoushi extensions) alongside JAR files
+- Updated MangaSource model: Added KeiyoushiMangaSource recognition, backup name handling, and summary/title display
+- Updated Throwable.kt: Added ExtensionExecutionException display message handling
+- Added string resources for Keiyoushi support (20+ new strings)
+- Updated AndroidManifest MIME type handling (already supported APK MIME type)
+
+Stage Summary:
+- Full keiyoushi/Tachiyomi extension integration implemented
+- 6 new Kotlin source files created in core/parser/tachiyomi/
+- 8 existing files modified for integration
+- App now supports both Kotatsu JAR plugins AND Keiyoushi/Tachiyomi APK extensions
+- Centralized error handler prevents plugin crashes from affecting the host app
+- Extension sources appear in MangaSourceRegistry alongside JAR sources
+
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix Webtoon scroll page expansion bug + review and fix keiyoushi integration
+
+Work Log:
+- Analyzed root cause of page expansion bug in WebtoonImageView
+- Root cause #1: adjustScale() set minScale/maxScale but did NOT call setScaleAndCenter(), so SSIV's internal default scale persisted causing visible expansion
+- Root cause #2: restoreScaleWithoutLayout() in onDownSamplingChanged() used stale sWidth/sHeight (before re-decode updated dimensions), computing wrong scale
+- Root cause #3: Double-trigger: onDownSamplingChanged set premature scale, then onReady set it again
+- Fix: Rewrote WebtoonImageView with unified applyFillWidthScale() method that always calls setScaleAndCenter()
+- Fix: onDownSamplingChanged() now only preserves minScale/maxScale without calling setScaleAndCenter() (prevents stale-dimension expansion)
+- Added lastAppliedScale tracking to avoid redundant scale applications
+- Keiyoushi integration review found 4 critical + 5 medium + 5 low issues
+- Fixed C1+C2+C4: KeiyoushiMangaSource locale type (Locale? → String), added isBroken property
+- Fixed C3: DynamicParserManager changed from class to object (all call sites use static access)
+- Fixed M1: fetchRelatedMangaList is suspend, not Observable — removed awaitObservable wrapper
+- Fixed M2: Blocking OkHttp execute() now uses withContext(Dispatchers.IO)
+- Fixed M3: availableSortOrders now conditionally includes SortOrder.UPDATED based on supportsLatest
+- Fixed M4: TachiyomiExtensionLoader.classLoaders changed to ConcurrentHashMap
+- Fixed M5: PluginErrorHandler deduplication now records error but skips log (instead of skipping both)
+- Fixed L2: Removed unused PluginClassLoader import from TachiyomiExtensionLoader
+- Fixed MangaSource.getSummary() locale type for KeiyoushiMangaSource (String.toLocaleOrNull())
+
+Stage Summary:
+- Webtoon scroll expansion bug fixed with 3 root causes addressed
+- Keiyoushi integration: 4 critical compile-blocking bugs fixed, 5 medium issues fixed, 2 low issues fixed
+- Remaining known gaps: JavaScriptEngine stub (JS-dependent extensions will crash), no Keiyoushi browse UI, no ConfigurableSource preference screen support
