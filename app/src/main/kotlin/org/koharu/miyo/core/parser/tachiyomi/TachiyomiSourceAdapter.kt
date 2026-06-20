@@ -53,12 +53,17 @@ class TachiyomiSourceAdapter(
 	// we use MangaSourceRegistry to look up a matching source. For Tachiyomi
 	// sources, we return the first enum constant as a placeholder — the actual
 	// source identity is carried by mangaSource (KeiyoushiMangaSource).
-	override val source: org.koitharu.kotatsu.parsers.model.MangaSource
-		get() = mangaSource
+	override val source: org.koitharu.kotatsu.parsers.model.MangaParserSource
+		get() = org.koitharu.kotatsu.parsers.model.MangaParserSource.entries.firstOrNull()
+			?: throw IllegalStateException("No MangaParserSource entries available")
 
 	override val availableSortOrders: Set<SortOrder>
 		get() = if (httpSource.supportsLatest) setOf(SortOrder.POPULARITY, SortOrder.UPDATED)
 			else setOf(SortOrder.POPULARITY)
+
+	@Suppress("DEPRECATION")
+	override val searchQueryCapabilities: org.koitharu.kotatsu.parsers.model.search.MangaSearchQueryCapabilities
+		get() = org.koitharu.kotatsu.parsers.model.search.MangaSearchQueryCapabilities()
 
 	override val filterCapabilities: MangaListFilterCapabilities
 		get() = MangaListFilterCapabilities(
@@ -189,12 +194,14 @@ class TachiyomiSourceAdapter(
 		return emptyList()
 	}
 
-	override suspend fun getList(query: org.koitharu.kotatsu.parsers.model.MangaSearchQuery): List<Manga> {
+	@Suppress("DEPRECATION")
+	override suspend fun getList(query: org.koitharu.kotatsu.parsers.model.search.MangaSearchQuery): List<Manga> {
 		val text = query.query ?: return emptyList()
 		val page = 1
 		return searchManga(page, text, httpSource.getFilterList())
 	}
 
+	@OptIn(org.koitharu.kotatsu.parsers.InternalParsersApi::class)
 	override suspend fun resolveLink(resolver: org.koitharu.kotatsu.parsers.util.LinkResolver, link: okhttp3.HttpUrl): Manga? {
 		// Link resolution is not supported for Tachiyomi extensions
 		return null
