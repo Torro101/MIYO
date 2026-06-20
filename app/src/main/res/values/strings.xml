@@ -1022,4 +1022,11 @@
     <string name="duplicate_sources_detected">Multiple sources detected for the same site</string>
     <string name="source_priority_keiyoushi">Keiyoushi (priority)</string>
     <string name="source_priority_jar">JAR Plugin</string>
+
+    <!-- Keiyoushi repository browsing -->
+    <string name="keiyoushi_add_repo">Add repository</string>
+    <string name="keiyoushi_add_repo_summary">Enter the URL of a Tachiyomi extension repository index (must end with index.min.json)</string>
+    <string name="keiyoushi_invalid_repo_url">Invalid repository URL. It must start with http:// or https:// and end with index.min.json</string>
+    <string name="keiyoushi_manage_repos">Manage repositories</string>
+    <string name="keiyoushi_confirm_uninstall">Are you sure you want to uninstall %1?</string>
 </resources>

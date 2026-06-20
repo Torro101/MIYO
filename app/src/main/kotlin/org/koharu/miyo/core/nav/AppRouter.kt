@@ -102,6 +102,7 @@ import org.koharu.miyo.settings.override.OverrideConfigActivity
 import org.koharu.miyo.settings.reader.ReaderTapGridConfigActivity
 import org.koharu.miyo.settings.sources.auth.SourceAuthActivity
 import org.koharu.miyo.settings.sources.catalog.SourcesCatalogActivity
+import org.koharu.miyo.settings.sources.keiyoushi.KeiyoushiBrowseActivity
 import org.koharu.miyo.settings.storage.MangaDirectorySelectDialog
 import org.koharu.miyo.settings.storage.directories.MangaDirectoriesActivity
 import org.koharu.miyo.settings.tracker.categories.TrackerCategoriesConfigSheet
@@ -209,6 +210,8 @@ class AppRouter private constructor(
     }
 
     fun openSourcesCatalog() = startActivity(SourcesCatalogActivity::class.java)
+
+    fun openKeiyoushiBrowse() = startActivity(KeiyoushiBrowseActivity::class.java)
 
     fun openDownloads() = startActivity(DownloadsActivity::class.java)
 
