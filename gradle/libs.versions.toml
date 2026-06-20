@@ -116,7 +116,6 @@ junit = { module = "junit:junit", version.ref = "junit" }
 kizzyrpc = { module = "com.github.dead8309:KizzyRPC", version.ref = "kizzyRpc" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotatsu-parsers = { module = "com.github.YakaTeam:kotatsu-parsers", version.ref = "kotatsuParsers" }
-kotatsu-parsers-ksp = { module = "com.github.YakaTeam:kotatsu-parsers-ksp", version.ref = "kotatsuParsers" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "coroutines" }

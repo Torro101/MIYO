@@ -54,8 +54,7 @@ class TachiyomiSourceAdapter(
 	// sources, we return the first enum constant as a placeholder — the actual
 	// source identity is carried by mangaSource (KeiyoushiMangaSource).
 	override val source: org.koitharu.kotatsu.parsers.model.MangaParserSource
-		get() = org.koitharu.kotatsu.parsers.model.MangaParserSource.entries.firstOrNull()
-			?: throw IllegalStateException("No MangaParserSource entries available")
+		get() = org.koitharu.kotatsu.parsers.model.MangaParserSource.MIYO_PLACEHOLDER
 
 	override val availableSortOrders: Set<SortOrder>
 		get() = if (httpSource.supportsLatest) setOf(SortOrder.POPULARITY, SortOrder.UPDATED)
