@@ -35,222 +35,224 @@ import org.koharu.miyo.reader.ui.pager.vm.PageViewModel
 import org.koharu.miyo.reader.ui.pager.webtoon.WebtoonHolder
 
 abstract class BasePageHolder<B : ViewBinding>(
-	protected val binding: B,
-	loader: PageLoader,
-	readerSettingsProducer: ReaderSettings.Producer,
-	networkState: NetworkState,
-	exceptionResolver: ExceptionResolver,
-	lifecycleOwner: LifecycleOwner,
+        protected val binding: B,
+        loader: PageLoader,
+        readerSettingsProducer: ReaderSettings.Producer,
+        networkState: NetworkState,
+        exceptionResolver: ExceptionResolver,
+        lifecycleOwner: LifecycleOwner,
 ) : LifecycleAwareViewHolder(binding.root, lifecycleOwner), DefaultOnImageEventListener, ComponentCallbacks2 {
 
-	protected val viewModel = PageViewModel(
-		loader = loader,
-		lifecycleOwner = lifecycleOwner,
-		settingsProducer = readerSettingsProducer,
-		networkState = networkState,
-		exceptionResolver = exceptionResolver,
-		isWebtoon = this is WebtoonHolder,
-	)
-	protected val bindingInfo = LayoutPageInfoBinding.bind(binding.root)
-	protected abstract val ssiv: SubsamplingScaleImageView
+        protected val viewModel = PageViewModel(
+                loader = loader,
+                lifecycleOwner = lifecycleOwner,
+                settingsProducer = readerSettingsProducer,
+                networkState = networkState,
+                exceptionResolver = exceptionResolver,
+                isWebtoon = this is WebtoonHolder,
+        )
+        protected val bindingInfo = LayoutPageInfoBinding.bind(binding.root)
+        protected abstract val ssiv: SubsamplingScaleImageView
 
-	protected val settings: ReaderSettings
-		get() = viewModel.settingsProducer.value
+        protected val settings: ReaderSettings
+                get() = viewModel.settingsProducer.value
 
-	val context: Context
-		get() = itemView.context
+        val context: Context
+                get() = itemView.context
 
-	var boundData: ReaderPage? = null
-		private set
+        var boundData: ReaderPage? = null
+                private set
 
-	init {
-		lifecycleScope.launch(Dispatchers.Main) {
-			ssiv.bindToLifecycle(this@BasePageHolder)
-			ssiv.isEagerLoadingEnabled = !context.isLowRamDevice()
-			ssiv.addOnImageEventListener(viewModel)
-			ssiv.addOnImageEventListener(this@BasePageHolder)
-		}
-		val clickListener = View.OnClickListener { v ->
-			when (v.id) {
-				R.id.button_retry -> viewModel.retry(
-					page = boundData?.toMangaPage() ?: return@OnClickListener,
-					isFromUser = true,
-				)
+        init {
+                lifecycleScope.launch(Dispatchers.Main) {
+                        ssiv.bindToLifecycle(this@BasePageHolder)
+                        ssiv.isEagerLoadingEnabled = !context.isLowRamDevice()
+                        ssiv.addOnImageEventListener(viewModel)
+                        ssiv.addOnImageEventListener(this@BasePageHolder)
+                }
+                val clickListener = View.OnClickListener { v ->
+                        when (v.id) {
+                                R.id.button_retry -> viewModel.retry(
+                                        page = boundData?.toMangaPage() ?: return@OnClickListener,
+                                        isFromUser = true,
+                                )
 
-				R.id.button_error_details -> viewModel.showErrorDetails(boundData?.url)
-			}
-		}
-		bindingInfo.buttonRetry.setOnClickListener(clickListener)
-		bindingInfo.buttonErrorDetails.setOnClickListener(clickListener)
-	}
+                                R.id.button_error_details -> viewModel.showErrorDetails(boundData?.url)
+                        }
+                }
+                bindingInfo.buttonRetry.setOnClickListener(clickListener)
+                bindingInfo.buttonErrorDetails.setOnClickListener(clickListener)
+        }
 
-	@CallSuper
-	protected open fun onConfigChanged(settings: ReaderSettings) {
-		settings.applyBackground(itemView)
-		if (settings.applyBitmapConfig(ssiv)) {
-			reloadImage()
-		} else if (viewModel.state.value is PageState.Shown) {
-			onReady()
-		}
-		ssiv.applyDownSampling(isResumed())
-	}
+        @CallSuper
+        protected open fun onConfigChanged(settings: ReaderSettings) {
+                settings.applyBackground(itemView)
+                if (settings.applyBitmapConfig(ssiv)) {
+                        reloadImage()
+                } else if (viewModel.state.value is PageState.Shown) {
+                        onReady()
+                }
+                ssiv.applyDownSampling(isResumed())
+        }
 
-	fun reloadImage() {
-		viewModel.restoreShownImage()
-	}
+        fun reloadImage() {
+                viewModel.restoreShownImage()
+        }
 
-	fun bind(data: ReaderPage) {
-		boundData = data
-		val isLoadStarted = viewModel.onBind(data.toMangaPage())
-		onBind(data)
-		if (!isLoadStarted && viewModel.state.value is PageState.Shown && !ssiv.isReady) {
-			reloadImage()
-		}
-	}
+        fun bind(data: ReaderPage) {
+                boundData = data
+                val isLoadStarted = viewModel.onBind(data.toMangaPage())
+                onBind(data)
+                if (!isLoadStarted && viewModel.state.value is PageState.Shown && !ssiv.isReady) {
+                        reloadImage()
+                }
+        }
 
-	@CallSuper
-	protected open fun onBind(data: ReaderPage) = Unit
+        @CallSuper
+        protected open fun onBind(data: ReaderPage) = Unit
 
-	override fun onCreate() {
-		super.onCreate()
-		context.registerComponentCallbacks(this)
-		viewModel.state.observe(this, ::onStateChanged)
-		viewModel.settingsProducer.observe(this, ::onConfigChanged)
-	}
+        override fun onCreate() {
+                super.onCreate()
+                context.registerComponentCallbacks(this)
+                viewModel.state.observe(this, ::onStateChanged)
+                viewModel.settingsProducer.observe(this, ::onConfigChanged)
+        }
 
-	override fun onResume() {
-		super.onResume()
-		ssiv.applyDownSampling(isForeground = true)
-		if (viewModel.state.value is PageState.Error && !viewModel.isLoading()) {
-			boundData?.let { viewModel.retry(it.toMangaPage(), isFromUser = false) }
-		} else if (viewModel.state.value is PageState.Empty) {
-			boundData?.let { viewModel.onBind(it.toMangaPage()) }
-		} else if (viewModel.state.value is PageState.Shown && !ssiv.isReady) {
-			reloadImage()
-		}
-	}
+        override fun onResume() {
+                super.onResume()
+                ssiv.applyDownSampling(isForeground = true)
+                if (viewModel.state.value is PageState.Error && !viewModel.isLoading()) {
+                        boundData?.let { viewModel.retry(it.toMangaPage(), isFromUser = false) }
+                } else if (viewModel.state.value is PageState.Empty) {
+                        boundData?.let { viewModel.onBind(it.toMangaPage()) }
+                } else if (viewModel.state.value is PageState.Shown && !ssiv.isReady) {
+                        reloadImage()
+                }
+        }
 
-	override fun onPause() {
-		super.onPause()
-		ssiv.applyDownSampling(isForeground = false)
-	}
+        override fun onPause() {
+                super.onPause()
+                ssiv.applyDownSampling(isForeground = false)
+        }
 
-	override fun onDestroy() {
-		context.unregisterComponentCallbacks(this)
-		super.onDestroy()
-	}
+        override fun onDestroy() {
+                context.unregisterComponentCallbacks(this)
+                super.onDestroy()
+        }
 
-	open fun onAttachedToWindow() = Unit
+        open fun onAttachedToWindow() = Unit
 
-	open fun onDetachedFromWindow() = Unit
+        open fun onDetachedFromWindow() = Unit
 
-	@CallSuper
-	open fun onRecycled() {
-		viewModel.onRecycle()
-		ssiv.recycle()
-	}
+        @CallSuper
+        open fun onRecycled() {
+                viewModel.onRecycle()
+                ssiv.recycle()
+        }
 
-	override fun onTrimMemory(level: Int) {
-		when (level) {
-			ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE,
-			ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
-			ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
-			ComponentCallbacks2.TRIM_MEMORY_MODERATE,
-			ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
-			ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
-				ssiv.recycle()
-				// Reloading immediately would defeat the purpose of the trim.
-				// Only reload while actually visible; otherwise onResume()
-				// restores the image lazily (Shown && !ssiv.isReady).
-				if (isResumed()) {
-					reloadImage()
-				} else if (viewModel.state.value !is PageState.Shown) {
-					viewModel.evictFromMemory()
-				}
-			}
-		}
-	}
+        override fun onTrimMemory(level: Int) {
+                when (level) {
+                        ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE,
+                        ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
+                        ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
+                        ComponentCallbacks2.TRIM_MEMORY_MODERATE,
+                        ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
+                        ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
+                                ssiv.recycle()
+                                // Never reload immediately after recycle — even when resumed,
+                                // the immediate recycle+reload causes a visible flash and can
+                                // trigger layout thrashing in the webtoon reader (the image
+                                // disappears then reappears, and the scale/scroll state may
+                                // be inconsistent for a frame). Instead, let onResume()
+                                // handle the lazy restore: it checks (Shown && !ssiv.isReady)
+                                // and calls reloadImage() after the memory pressure has passed.
+                                if (viewModel.state.value !is PageState.Shown) {
+                                        viewModel.evictFromMemory()
+                                }
+                        }
+                }
+        }
 
-	override fun onConfigurationChanged(newConfig: Configuration) = Unit
+        override fun onConfigurationChanged(newConfig: Configuration) = Unit
 
-	@Deprecated("Deprecated in Java")
-	final override fun onLowMemory() = onTrimMemory(TRIM_MEMORY_COMPLETE)
+        @Deprecated("Deprecated in Java")
+        final override fun onLowMemory() = onTrimMemory(TRIM_MEMORY_COMPLETE)
 
-	protected open fun onStateChanged(state: PageState) {
-		val showError = state is PageState.Error
-		val showProgress = state !is PageState.Empty && !state.isFinalState()
-		// Cross-fade the progress/error overlays instead of snapping. Only run
-		// the transition when visibility actually changes so frequent progress
-		// updates do not retrigger it.
-		if (bindingInfo.layoutError.isVisible != showError ||
-			bindingInfo.layoutProgress.isVisible != showProgress
-		) {
-			(binding.root as? ViewGroup)?.let { rootView ->
-				TransitionManager.beginDelayedTransition(
-					rootView,
-					Fade().apply {
-						duration = 200L
-						addTarget(bindingInfo.layoutError)
-						addTarget(bindingInfo.layoutProgress)
-					},
-				)
-			}
-		}
-		bindingInfo.layoutError.isVisible = showError
-		bindingInfo.layoutProgress.isVisible = showProgress
-		if (state.isFinalState() || state is PageState.Empty) {
-			bindingInfo.progressBar.hide()
-		} else {
-			bindingInfo.progressBar.show()
-		}
-		val progress = (state as? PageState.Loading)?.progress ?: -1
-		if (progress in 0..100) {
-			bindingInfo.progressBar.isIndeterminate = false
-			bindingInfo.progressBar.setProgressCompat(progress, true)
-			bindingInfo.textViewStatus.text = context.getString(R.string.percent_string_pattern, progress.toString())
-		} else {
-			bindingInfo.progressBar.isIndeterminate = true
-			bindingInfo.textViewStatus.setText(R.string.loading_)
-		}
-		when (state) {
-			is PageState.Converting -> {
-				bindingInfo.textViewStatus.setText(R.string.processing_)
-			}
+        protected open fun onStateChanged(state: PageState) {
+                val showError = state is PageState.Error
+                val showProgress = state !is PageState.Empty && !state.isFinalState()
+                // Cross-fade the progress/error overlays instead of snapping. Only run
+                // the transition when visibility actually changes so frequent progress
+                // updates do not retrigger it.
+                if (bindingInfo.layoutError.isVisible != showError ||
+                        bindingInfo.layoutProgress.isVisible != showProgress
+                ) {
+                        (binding.root as? ViewGroup)?.let { rootView ->
+                                TransitionManager.beginDelayedTransition(
+                                        rootView,
+                                        Fade().apply {
+                                                duration = 200L
+                                                addTarget(bindingInfo.layoutError)
+                                                addTarget(bindingInfo.layoutProgress)
+                                        },
+                                )
+                        }
+                }
+                bindingInfo.layoutError.isVisible = showError
+                bindingInfo.layoutProgress.isVisible = showProgress
+                if (state.isFinalState() || state is PageState.Empty) {
+                        bindingInfo.progressBar.hide()
+                } else {
+                        bindingInfo.progressBar.show()
+                }
+                val progress = (state as? PageState.Loading)?.progress ?: -1
+                if (progress in 0..100) {
+                        bindingInfo.progressBar.isIndeterminate = false
+                        bindingInfo.progressBar.setProgressCompat(progress, true)
+                        bindingInfo.textViewStatus.text = context.getString(R.string.percent_string_pattern, progress.toString())
+                } else {
+                        bindingInfo.progressBar.isIndeterminate = true
+                        bindingInfo.textViewStatus.setText(R.string.loading_)
+                }
+                when (state) {
+                        is PageState.Converting -> {
+                                bindingInfo.textViewStatus.setText(R.string.processing_)
+                        }
 
-			is PageState.Empty -> Unit
+                        is PageState.Empty -> Unit
 
-			is PageState.Error -> {
-				val e = state.error
-				bindingInfo.textViewError.text = e.getDisplayMessage(context.resources)
-				bindingInfo.buttonRetry.setText(
-					ExceptionResolver.getResolveStringId(e).ifZero { R.string.try_again },
-				)
-				bindingInfo.buttonErrorDetails.isVisible = e.isSerializable()
-				bindingInfo.layoutError.isVisible = true
-				bindingInfo.progressBar.hide()
-			}
+                        is PageState.Error -> {
+                                val e = state.error
+                                bindingInfo.textViewError.text = e.getDisplayMessage(context.resources)
+                                bindingInfo.buttonRetry.setText(
+                                        ExceptionResolver.getResolveStringId(e).ifZero { R.string.try_again },
+                                )
+                                bindingInfo.buttonErrorDetails.isVisible = e.isSerializable()
+                                bindingInfo.layoutError.isVisible = true
+                                bindingInfo.progressBar.hide()
+                        }
 
-			is PageState.Loaded -> {
-				bindingInfo.textViewStatus.setText(R.string.preparing_)
-				ssiv.setImage(state.source)
-			}
+                        is PageState.Loaded -> {
+                                bindingInfo.textViewStatus.setText(R.string.preparing_)
+                                ssiv.setImage(state.source)
+                        }
 
-			is PageState.Loading -> {
-				if (state.preview != null && ssiv.getState() == null) {
-					ssiv.setImage(state.preview)
-				}
-			}
+                        is PageState.Loading -> {
+                                if (state.preview != null && ssiv.getState() == null) {
+                                        ssiv.setImage(state.preview)
+                                }
+                        }
 
-			is PageState.Shown -> Unit
-		}
-	}
+                        is PageState.Shown -> Unit
+                }
+        }
 
-	protected fun SubsamplingScaleImageView.applyDownSampling(isForeground: Boolean) {
-		downSampling = when {
-			isForeground || !settings.isReaderOptimizationEnabled -> 1
-			BuildConfig.DEBUG -> 32
-			context.isLowRamDevice() -> 8
-			else -> 4
-		}
-	}
+        protected fun SubsamplingScaleImageView.applyDownSampling(isForeground: Boolean) {
+                downSampling = when {
+                        isForeground || !settings.isReaderOptimizationEnabled -> 1
+                        BuildConfig.DEBUG -> 32
+                        context.isLowRamDevice() -> 8
+                        else -> 4
+                }
+        }
 }

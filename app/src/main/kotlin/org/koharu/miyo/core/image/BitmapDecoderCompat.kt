@@ -27,134 +27,147 @@ import java.nio.ByteBuffer
 
 object BitmapDecoderCompat {
 
-	private const val FORMAT_AVIF = "avif"
+        private const val FORMAT_AVIF = "avif"
 
-	@Blocking
-	fun decode(file: File): Bitmap = when (val format = probeMimeType(file)?.subtype) {
-		FORMAT_AVIF -> file.source().buffer().use { decodeAvif(it.readByteBuffer()) }
-		else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-			// ImageDecoder rejects some valid-but-marginal images (notably
-			// webps it cannot pixel-fetch) with IOException("getPixels failed
-			// with error invalid input"). BitmapFactory is more tolerant of
-			// such files, so fall back to it before giving up — otherwise a
-			// single webp page fails to convert and renders as a hard error.
-			try {
-				ImageDecoder.decodeBitmap(ImageDecoder.createSource(file))
-			} catch (e: IOException) {
-				checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
-			} catch (e: ImageDecodeException) {
-				checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
-			}
-		} else {
-			checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
-		}
-	}
+        @Blocking
+        fun decode(file: File): Bitmap = when (val format = probeMimeType(file)?.subtype) {
+                FORMAT_AVIF -> file.source().buffer().use { decodeAvif(it.readByteBuffer()) }
+                else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        // ImageDecoder rejects some valid-but-marginal images (notably
+                        // webps it cannot pixel-fetch) with IOException("getPixels failed
+                        // with error invalid input"). BitmapFactory is more tolerant of
+                        // such files, so fall back to it before giving up — otherwise a
+                        // single webp page fails to convert and renders as a hard error.
+                        try {
+                                ImageDecoder.decodeBitmap(ImageDecoder.createSource(file))
+                        } catch (e: IOException) {
+                                checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
+                        } catch (e: ImageDecodeException) {
+                                checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
+                        }
+                } else {
+                        checkBitmapNotNull(BitmapFactory.decodeFile(file.absolutePath), format)
+                }
+        }
 
-	@Blocking
-	fun decode(stream: InputStream, type: MimeType?, isMutable: Boolean = false): Bitmap {
-		val format = type?.subtype
-		if (format == FORMAT_AVIF) {
-			return decodeAvif(stream.toByteBuffer())
-		}
+        @Blocking
+        fun decode(stream: InputStream, type: MimeType?, isMutable: Boolean = false): Bitmap {
+                val format = type?.subtype
+                if (format == FORMAT_AVIF) {
+                        return decodeAvif(stream.toByteBuffer())
+                }
 
-		// Attempt native JPEG decode for performance (2-6x faster)
-		if (format == "jpeg" || format == "jpg" || type == null) {
-			val bytes = stream.readBytes()
-			val nativeResult = tryNativeJpegDecode(bytes, isMutable)
-			if (nativeResult != null) {
-				return nativeResult
-			}
-			// Fall back to standard decoders with the bytes we already read
-			val byteBuffer = ByteBuffer.wrap(bytes)
-			return if (AvifDecoder.isAvifImage(byteBuffer)) {
-				decodeAvif(byteBuffer)
-			} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-				ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
-			} else {
-				val opts = BitmapFactory.Options().apply { inMutable = isMutable }
-				checkBitmapNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts), format)
-			}
-		}
+                // Attempt native JPEG decode for performance (2-6x faster)
+                if (format == "jpeg" || format == "jpg" || type == null) {
+                        val bytes = try { stream.readBytes() } catch (e: OutOfMemoryError) {
+                                // Stream too large for byte array, fall back to platform decoder
+                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                                        val opts = BitmapFactory.Options()
+                                        opts.inMutable = isMutable
+                                        return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
+                                }
+                                val byteBuffer = stream.toByteBuffer()
+                                return if (AvifDecoder.isAvifImage(byteBuffer)) {
+                                        decodeAvif(byteBuffer)
+                                } else {
+                                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
+                                }
+                        }
+                        val nativeResult = tryNativeJpegDecode(bytes, isMutable)
+                        if (nativeResult != null) {
+                                return nativeResult
+                        }
+                        // Fall back to standard decoders with the bytes we already read
+                        val byteBuffer = ByteBuffer.wrap(bytes)
+                        return if (AvifDecoder.isAvifImage(byteBuffer)) {
+                                decodeAvif(byteBuffer)
+                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
+                        } else {
+                                val opts = BitmapFactory.Options().apply { inMutable = isMutable }
+                                checkBitmapNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts), format)
+                        }
+                }
 
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-			val opts = BitmapFactory.Options()
-			opts.inMutable = isMutable
-			return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
-		}
-		val byteBuffer = stream.toByteBuffer()
-		return if (AvifDecoder.isAvifImage(byteBuffer)) {
-			decodeAvif(byteBuffer)
-		} else {
-			ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
-		}
-	}
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                        val opts = BitmapFactory.Options()
+                        opts.inMutable = isMutable
+                        return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
+                }
+                val byteBuffer = stream.toByteBuffer()
+                return if (AvifDecoder.isAvifImage(byteBuffer)) {
+                        decodeAvif(byteBuffer)
+                } else {
+                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
+                }
+        }
 
-	private fun tryNativeJpegDecode(data: ByteArray, isMutable: Boolean): Bitmap? {
-		if (isMutable || !NativeJpegDecoder.isDecodeEnabled) return null
-		return runCatchingCancellable {
-			NativeJpegDecoder.decodeJpegWithFallback(data)
-		}.getOrNull()
-	}
+        private fun tryNativeJpegDecode(data: ByteArray, isMutable: Boolean): Bitmap? {
+                if (isMutable || !NativeJpegDecoder.isDecodeEnabled) return null
+                return runCatchingCancellable {
+                        NativeJpegDecoder.decodeJpegWithFallback(data)
+                }.getOrNull()
+        }
 
-	@Blocking
-	fun createRegionDecoder(inoutStream: InputStream): BitmapRegionDecoder? = try {
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-			BitmapRegionDecoder.newInstance(inoutStream)
-		} else {
-			@Suppress("DEPRECATION")
-			BitmapRegionDecoder.newInstance(inoutStream, false)
-		}
-	} catch (e: IOException) {
-		e.printStackTraceDebug()
-		null
-	}
+        @Blocking
+        fun createRegionDecoder(inoutStream: InputStream): BitmapRegionDecoder? = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        BitmapRegionDecoder.newInstance(inoutStream)
+                } else {
+                        @Suppress("DEPRECATION")
+                        BitmapRegionDecoder.newInstance(inoutStream, false)
+                }
+        } catch (e: IOException) {
+                e.printStackTraceDebug()
+                null
+        }
 
-	@Blocking
-	fun probeMimeType(file: File): MimeType? {
-		return MimeTypes.probeMimeType(file) ?: detectBitmapType(file)
-	}
+        @Blocking
+        fun probeMimeType(file: File): MimeType? {
+                return MimeTypes.probeMimeType(file) ?: detectBitmapType(file)
+        }
 
-	@Blocking
-	private fun detectBitmapType(file: File): MimeType? = runCatchingCancellable {
-		val options = BitmapFactory.Options().apply {
-			inJustDecodeBounds = true
-		}
-		BitmapFactory.decodeFile(file.path, options)?.recycle()
-		options.outMimeType?.toMimeTypeOrNull()
-	}.getOrNull()
+        @Blocking
+        private fun detectBitmapType(file: File): MimeType? = runCatchingCancellable {
+                val options = BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                }
+                BitmapFactory.decodeFile(file.path, options)?.recycle()
+                options.outMimeType?.toMimeTypeOrNull()
+        }.getOrNull()
 
-	private fun checkBitmapNotNull(bitmap: Bitmap?, format: String?): Bitmap =
-		bitmap ?: throw ImageDecodeException(null, format)
+        private fun checkBitmapNotNull(bitmap: Bitmap?, format: String?): Bitmap =
+                bitmap ?: throw ImageDecodeException(null, format)
 
-	private fun decodeAvif(bytes: ByteBuffer): Bitmap {
-		val info = Info()
-		if (!AvifDecoder.getInfo(bytes, bytes.remaining(), info)) {
-			throw ImageDecodeException(
-				null,
-				FORMAT_AVIF,
-				"Requested to decode byte buffer which cannot be handled by AvifDecoder",
-			)
-		}
-		val config = if (info.depth == 8 || info.alphaPresent) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
-		val bitmap = createBitmap(info.width, info.height, config)
-		if (!AvifDecoder.decode(bytes, bytes.remaining(), bitmap)) {
-			bitmap.recycle()
-			throw ImageDecodeException(null, FORMAT_AVIF)
-		}
-		return bitmap
-	}
+        private fun decodeAvif(bytes: ByteBuffer): Bitmap {
+                val info = Info()
+                if (!AvifDecoder.getInfo(bytes, bytes.remaining(), info)) {
+                        throw ImageDecodeException(
+                                null,
+                                FORMAT_AVIF,
+                                "Requested to decode byte buffer which cannot be handled by AvifDecoder",
+                        )
+                }
+                val config = if (info.depth == 8 || info.alphaPresent) Bitmap.Config.ARGB_8888 else Bitmap.Config.RGB_565
+                val bitmap = createBitmap(info.width, info.height, config)
+                if (!AvifDecoder.decode(bytes, bytes.remaining(), bitmap)) {
+                        bitmap.recycle()
+                        throw ImageDecodeException(null, FORMAT_AVIF)
+                }
+                return bitmap
+        }
 
-	@RequiresApi(Build.VERSION_CODES.P)
-	private class DecoderConfigListener(
-		private val isMutable: Boolean,
-	) : ImageDecoder.OnHeaderDecodedListener {
+        @RequiresApi(Build.VERSION_CODES.P)
+        private class DecoderConfigListener(
+                private val isMutable: Boolean,
+        ) : ImageDecoder.OnHeaderDecodedListener {
 
-		override fun onHeaderDecoded(
-			decoder: ImageDecoder,
-			info: ImageDecoder.ImageInfo,
-			source: ImageDecoder.Source
-		) {
-			decoder.isMutableRequired = isMutable
-		}
-	}
+                override fun onHeaderDecoded(
+                        decoder: ImageDecoder,
+                        info: ImageDecoder.ImageInfo,
+                        source: ImageDecoder.Source
+                ) {
+                        decoder.isMutableRequired = isMutable
+                }
+        }
 }

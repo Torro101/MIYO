@@ -29,75 +29,75 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 interface NetworkModule {
 
-	@Binds
-	fun bindCookieJar(androidCookieJar: MutableCookieJar): CookieJar
+        @Binds
+        fun bindCookieJar(androidCookieJar: MutableCookieJar): CookieJar
 
-	@Binds
-	fun bindImageProxyInterceptor(impl: RealImageProxyInterceptor): ImageProxyInterceptor
+        @Binds
+        fun bindImageProxyInterceptor(impl: RealImageProxyInterceptor): ImageProxyInterceptor
 
-	companion object {
+        companion object {
 
-		@Provides
-		@Singleton
-		fun provideCookieJar(
-			@ApplicationContext context: Context
-		): MutableCookieJar = runCatching {
-			AndroidCookieJar(context)
-		}.getOrElse { e ->
-			e.printStackTraceDebug()
-			// WebView is not available
-			PreferencesCookieJar(context)
-		}
+                @Provides
+                @Singleton
+                fun provideCookieJar(
+                        @ApplicationContext context: Context
+                ): MutableCookieJar = runCatching {
+                        AndroidCookieJar(context)
+                }.getOrElse { e ->
+                        e.printStackTraceDebug()
+                        // WebView is not available
+                        PreferencesCookieJar(context)
+                }
 
-		@Provides
-		@Singleton
-		fun provideHttpCache(
-			localStorageManager: LocalStorageManager,
-		): Cache = localStorageManager.createHttpCache()
+                @Provides
+                @Singleton
+                fun provideHttpCache(
+                        localStorageManager: LocalStorageManager,
+                ): Cache = localStorageManager.createHttpCache()
 
-		@Provides
-		@Singleton
-		@BaseHttpClient
-		fun provideBaseHttpClient(
-			@ApplicationContext contextProvider: Provider<Context>,
-			cache: Cache,
-			cookieJar: MutableCookieJar,
-			settings: AppSettings,
-			proxyProvider: ProxyProvider,
-		): OkHttpClient = OkHttpClient.Builder().apply {
-			assertNotInMainThread()
-			connectTimeout(20, TimeUnit.SECONDS)
-			readTimeout(60, TimeUnit.SECONDS)
-			writeTimeout(20, TimeUnit.SECONDS)
-			connectionPool(okhttp3.ConnectionPool(20, 10, TimeUnit.MINUTES))
-			cookieJar(cookieJar)
-			proxySelector(proxyProvider.selector)
-			proxyAuthenticator(proxyProvider.authenticator)
-			dns(DoHManager(cache, settings))
-			if (settings.isSSLBypassEnabled) {
-				disableCertificateVerification()
-			} else {
-				installExtraCertificates(contextProvider.get())
-			}
-			cache(cache)
-			addInterceptor(GZipInterceptor())
-			addInterceptor(CloudFlareInterceptor(cookieJar))
-			addInterceptor(RateLimitInterceptor())
-			if (BuildConfig.DEBUG) {
-				addInterceptor(CurlLoggingInterceptor())
-			}
-		}.build()
+                @Provides
+                @Singleton
+                @BaseHttpClient
+                fun provideBaseHttpClient(
+                        @ApplicationContext contextProvider: Provider<Context>,
+                        cache: Cache,
+                        cookieJar: MutableCookieJar,
+                        settings: AppSettings,
+                        proxyProvider: ProxyProvider,
+                ): OkHttpClient = OkHttpClient.Builder().apply {
+                        assertNotInMainThread()
+                        connectTimeout(15, TimeUnit.SECONDS)
+                        readTimeout(45, TimeUnit.SECONDS)
+                        writeTimeout(20, TimeUnit.SECONDS)
+                        connectionPool(okhttp3.ConnectionPool(30, 5, TimeUnit.MINUTES))
+                        cookieJar(cookieJar)
+                        proxySelector(proxyProvider.selector)
+                        proxyAuthenticator(proxyProvider.authenticator)
+                        dns(DoHManager(cache, settings))
+                        if (settings.isSSLBypassEnabled) {
+                                disableCertificateVerification()
+                        } else {
+                                installExtraCertificates(contextProvider.get())
+                        }
+                        cache(cache)
+                        addInterceptor(GZipInterceptor())
+                        addInterceptor(CloudFlareInterceptor(cookieJar))
+                        addInterceptor(RateLimitInterceptor())
+                        if (BuildConfig.DEBUG) {
+                                addInterceptor(CurlLoggingInterceptor())
+                        }
+                }.build()
 
-		@Provides
-		@Singleton
-		@MangaHttpClient
-		fun provideMangaHttpClient(
-			@BaseHttpClient baseClient: OkHttpClient,
-			commonHeadersInterceptor: CommonHeadersInterceptor,
-		): OkHttpClient = baseClient.newBuilder().apply {
-			addNetworkInterceptor(CacheLimitInterceptor())
-			addInterceptor(commonHeadersInterceptor)
-		}.build()
+                @Provides
+                @Singleton
+                @MangaHttpClient
+                fun provideMangaHttpClient(
+                        @BaseHttpClient baseClient: OkHttpClient,
+                        commonHeadersInterceptor: CommonHeadersInterceptor,
+                ): OkHttpClient = baseClient.newBuilder().apply {
+                        addNetworkInterceptor(CacheLimitInterceptor())
+                        addInterceptor(commonHeadersInterceptor)
+                }.build()
 
-	}
+        }
 }

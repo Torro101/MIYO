@@ -11,7 +11,7 @@ import org.koharu.miyo.core.util.ext.printStackTraceDebug
  */
 object NativeJpegDecoder {
 
-    private const val ENABLE_UNSAFE_NATIVE_JPEG_DECODE = false
+    private const val ENABLE_UNSAFE_NATIVE_JPEG_DECODE = true
 
     private var nativeAvailable: Boolean? = null
 
