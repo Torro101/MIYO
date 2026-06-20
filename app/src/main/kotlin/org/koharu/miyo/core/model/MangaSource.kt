@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.text.inSpans
 import org.koharu.miyo.R
 import org.koharu.miyo.core.parser.external.ExternalMangaSource
+import org.koharu.miyo.core.parser.tachiyomi.KeiyoushiMangaSource
 import org.koharu.miyo.core.util.ext.getDisplayName
 import org.koharu.miyo.core.util.ext.toLocale
 import org.koharu.miyo.core.util.ext.toLocaleOrNull
@@ -40,11 +41,11 @@ data class PluginMangaSource(val delegate: MangaSource, val jarName: String) : M
 }
 
 data object LocalMangaSource : MangaSource {
-	override val name = "LOCAL"
+        override val name = "LOCAL"
 }
 
 data object UnknownMangaSource : MangaSource {
-	override val name = "UNKNOWN"
+        override val name = "UNKNOWN"
 }
 
 data class UnresolvedMangaSource(override val name: String) : MangaSource {
@@ -55,42 +56,44 @@ data class UnresolvedMangaSource(override val name: String) : MangaSource {
 }
 
 data object TestMangaSource : MangaSource {
-	override val name = "TEST"
+        override val name = "TEST"
 }
 
 fun MangaSource(name: String?): MangaSource {
-	when (name ?: return UnknownMangaSource) {
-		UnknownMangaSource.name -> return UnknownMangaSource
-		LocalMangaSource.name -> return LocalMangaSource
-		TestMangaSource.name -> return TestMangaSource
-	}
-	if (name.startsWith("content:")) {
-		val parts = name.substringAfter(':').splitTwoParts('/') ?: return UnknownMangaSource
-		return ExternalMangaSource(packageName = parts.first, authority = parts.second)
-	}
-	MangaSourceRegistry.sources.forEach {
-		if (it.name == name) return it
-	}
-	MangaSourceRegistry.sources.forEach {
-		if (it is PluginMangaSource && it.sourceName == name) return it
-	}
+        when (name ?: return UnknownMangaSource) {
+                UnknownMangaSource.name -> return UnknownMangaSource
+                LocalMangaSource.name -> return LocalMangaSource
+                TestMangaSource.name -> return TestMangaSource
+        }
+        if (name.startsWith("content:")) {
+                val parts = name.substringAfter(':').splitTwoParts('/') ?: return UnknownMangaSource
+                return ExternalMangaSource(packageName = parts.first, authority = parts.second)
+        }
+        MangaSourceRegistry.sources.forEach {
+                if (it.name == name) return it
+        }
+        MangaSourceRegistry.sources.forEach {
+                if (it is PluginMangaSource && it.sourceName == name) return it
+                if (it is KeiyoushiMangaSource && it.sourceNameOnly == name) return it
+        }
     // Backward compatibility for loaded database items saved as '1.jar:MANGADEX'
-	if (name.contains(':')) {
+        if (name.contains(':')) {
         val cleanName = name.substringAfter(":")
         MangaSourceRegistry.sources.forEach {
             if (it.name == cleanName) return it
             if (it is PluginMangaSource && it.sourceName == cleanName) return it
         }
     }
-	return UnresolvedMangaSource(name)
+        return UnresolvedMangaSource(name)
 }
 
 fun String.toBackupSourceName(): String {
-	return when (val src = MangaSource(this)) {
-		is PluginMangaSource -> src.sourceName
-		is UnresolvedMangaSource -> if (this.contains(':') && !this.startsWith("content:")) this.substringAfter(':') else this
-		else -> this
-	}
+        return when (val src = MangaSource(this)) {
+                is PluginMangaSource -> src.sourceName
+                is KeiyoushiMangaSource -> src.sourceNameOnly
+                is UnresolvedMangaSource -> if (this.contains(':') && !this.startsWith("content:")) this.substringAfter(':') else this
+                else -> this
+        }
 }
 
 fun Collection<String>.toMangaSources() = map(::MangaSource)
@@ -99,20 +102,20 @@ fun MangaSource.isNsfw(): Boolean = contentType == ContentType.HENTAI
 
 @get:StringRes
 val ContentType.titleResId
-	get() = when (this) {
-		ContentType.MANGA -> R.string.content_type_manga
-		ContentType.HENTAI -> R.string.content_type_hentai
-		ContentType.COMICS -> R.string.content_type_comics
-		ContentType.OTHER -> R.string.content_type_other
-		ContentType.MANHWA -> R.string.content_type_manhwa
-		ContentType.MANHUA -> R.string.content_type_manhua
-		ContentType.NOVEL -> R.string.content_type_novel
-		ContentType.ONE_SHOT -> R.string.content_type_one_shot
-		ContentType.DOUJINSHI -> R.string.content_type_doujinshi
-		ContentType.IMAGE_SET -> R.string.content_type_image_set
-		ContentType.ARTIST_CG -> R.string.content_type_artist_cg
-		ContentType.GAME_CG -> R.string.content_type_game_cg
-	}
+        get() = when (this) {
+                ContentType.MANGA -> R.string.content_type_manga
+                ContentType.HENTAI -> R.string.content_type_hentai
+                ContentType.COMICS -> R.string.content_type_comics
+                ContentType.OTHER -> R.string.content_type_other
+                ContentType.MANHWA -> R.string.content_type_manhwa
+                ContentType.MANHUA -> R.string.content_type_manhua
+                ContentType.NOVEL -> R.string.content_type_novel
+                ContentType.ONE_SHOT -> R.string.content_type_one_shot
+                ContentType.DOUJINSHI -> R.string.content_type_doujinshi
+                ContentType.IMAGE_SET -> R.string.content_type_image_set
+                ContentType.ARTIST_CG -> R.string.content_type_artist_cg
+                ContentType.GAME_CG -> R.string.content_type_game_cg
+        }
 
 tailrec fun MangaSource.unwrap(): MangaSource = when (this) {
     is MangaSourceInfo -> mangaSource.unwrap()
@@ -123,44 +126,49 @@ tailrec fun MangaSource.unwrap(): MangaSource = when (this) {
 fun MangaSource.getLocale(): Locale? = locale.toLocaleOrNull()
 
 fun MangaSource.getSummary(context: Context): String? {
-	val baseSummary = when {
-		this is MangaSourceInfo && mangaSource is ExternalMangaSource -> context.getString(R.string.external_source)
-		this is ExternalMangaSource -> context.getString(R.string.external_source)
-		this === LocalMangaSource || this === TestMangaSource || this === UnknownMangaSource -> null
-		else -> {
-			val type = context.getString(contentType.titleResId)
-			val loc = locale.toLocale().getDisplayName(context)
-			context.getString(R.string.source_summary_pattern, type, loc)
-		}
-	}
-	val pluginSource = when (this) {
-		is PluginMangaSource -> this
-		is MangaSourceInfo -> mangaSource as? PluginMangaSource
-		else -> null
-	}
-	return if (pluginSource != null && baseSummary != null) {
-		"$baseSummary • ${pluginSource.jarName}"
-	} else pluginSource?.jarName ?: baseSummary
+        val baseSummary = when {
+                this is MangaSourceInfo && mangaSource is ExternalMangaSource -> context.getString(R.string.external_source)
+                this is ExternalMangaSource -> context.getString(R.string.external_source)
+                this is KeiyoushiMangaSource -> {
+                        val type = context.getString(R.string.extension_type_keiyoushi)
+                        val loc = locale.toLocaleOrNull()?.getDisplayLanguage(Locale.getDefault()) ?: context.getString(R.string.other)
+                        "$type • $loc"
+                }
+                this === LocalMangaSource || this === TestMangaSource || this === UnknownMangaSource -> null
+                else -> {
+                        val type = context.getString(contentType.titleResId)
+                        val loc = locale.toLocale().getDisplayName(context)
+                        context.getString(R.string.source_summary_pattern, type, loc)
+                }
+        }
+        val pluginSource = when (this) {
+                is PluginMangaSource -> this
+                is MangaSourceInfo -> mangaSource as? PluginMangaSource
+                else -> null
+        }
+        return if (pluginSource != null && baseSummary != null) {
+                "$baseSummary • ${pluginSource.jarName}"
+        } else pluginSource?.jarName ?: baseSummary
 }
 
 fun MangaSource.getTitle(context: Context): String = when {
-	this === LocalMangaSource -> context.getString(R.string.local_storage)
-	this === TestMangaSource -> context.getString(R.string.test_parser)
-	this is ExternalMangaSource -> this.resolveName(context)
-	this is MangaSourceInfo && mangaSource is ExternalMangaSource -> mangaSource.resolveName(context)
-	this === UnknownMangaSource -> context.getString(R.string.unknown)
-	else -> title
+        this === LocalMangaSource -> context.getString(R.string.local_storage)
+        this === TestMangaSource -> context.getString(R.string.test_parser)
+        this is ExternalMangaSource -> this.resolveName(context)
+        this is MangaSourceInfo && mangaSource is ExternalMangaSource -> mangaSource.resolveName(context)
+        this === UnknownMangaSource -> context.getString(R.string.unknown)
+        else -> title
 }
 
 fun SpannableStringBuilder.appendIcon(textView: TextView, @DrawableRes resId: Int): SpannableStringBuilder {
-	val icon = ContextCompat.getDrawable(textView.context, resId) ?: return this
-	icon.setTintList(textView.textColors)
-	val size = textView.lineHeight
-	icon.setBounds(0, 0, size, size)
-	val alignment = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-		ImageSpan.ALIGN_CENTER
-	} else {
-		ImageSpan.ALIGN_BOTTOM
-	}
-	return inSpans(ImageSpan(icon, alignment)) { append(' ') }
+        val icon = ContextCompat.getDrawable(textView.context, resId) ?: return this
+        icon.setTintList(textView.textColors)
+        val size = textView.lineHeight
+        icon.setBounds(0, 0, size, size)
+        val alignment = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ImageSpan.ALIGN_CENTER
+        } else {
+                ImageSpan.ALIGN_BOTTOM
+        }
+        return inSpans(ImageSpan(icon, alignment)) { append(' ') }
 }

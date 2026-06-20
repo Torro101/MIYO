@@ -1,12 +1,12 @@
 -optimizationpasses 8
 -dontobfuscate
 -keepclassmembers class kotlin.jvm.internal.Intrinsics {
-	public static void checkExpressionValueIsNotNull(...);
-	public static void checkNotNullExpressionValue(...);
-	public static void checkReturnedValueIsNotNull(...);
-	public static void checkFieldIsNotNull(...);
-	public static void checkParameterIsNotNull(...);
-	public static void checkNotNullParameter(...);
+        public static void checkExpressionValueIsNotNull(...);
+        public static void checkNotNullExpressionValue(...);
+        public static void checkReturnedValueIsNotNull(...);
+        public static void checkFieldIsNotNull(...);
+        public static void checkParameterIsNotNull(...);
+        public static void checkNotNullParameter(...);
 }
 
 -dontwarn okhttp3.internal.platform.**
@@ -34,3 +34,11 @@
 # For core-exts dependency, optimization is needed if possible
 -keep class org.koitharu.kotatsu.parsers.** { *; }
 -keep class * extends org.koitharu.kotatsu.parsers.MangaLoaderContext { *; }
+
+# Keiyoushi / Tachiyomi extension API classes — must be kept for runtime reflection
+-keep class eu.kanade.tachiyomi.source.** { *; }
+-keep class eu.kanade.tachiyomi.network.** { *; }
+-keep class eu.kanade.tachiyomi.util.** { *; }
+-keep class eu.kanade.tachiyomi.AppInfo { *; }
+-keep class app.cash.quickjs.** { *; }
+-dontwarn eu.kanade.tachiyomi.**

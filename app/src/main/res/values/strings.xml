@@ -424,7 +424,7 @@
     <string name="port">Port</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_bypass_enabled">Bypass internet censorship</string>
-	<string name="proxy_bypass_enabled_summary">Route app traffic through the built-in bypass tunnel for blocked networks (beta)</string>
+        <string name="proxy_bypass_enabled_summary">Route app traffic through the built-in bypass tunnel for blocked networks (beta)</string>
     <string name="invalid_value_message">Invalid value</string>
     <string name="kitsu" translatable="false">Kitsu</string>
     <string name="email_password_enter_hint">Enter your email and password to continue</string>
@@ -943,44 +943,67 @@
     <string name="download_image_enhancement_summary">Enhance newly downloaded pages after validation. Disabled by default; failed refinements keep the original page and output size is capped.</string>
     <string name="delete_original_after_refinement">Delete originals after safe refinement</string>
     <string name="delete_original_after_refinement_summary">Enabled by default. Original files are removed only after the refined image or archive is validated as readable.</string>
-	<string name="experiment">Experiment</string>
-	<string name="details_backdrop">Set large cover as backdrop</string>
-	<string name="details_backdrop_summary">Show a large cover image at the top as a backdrop image (like Tachiyomi)</string>
-	<string name="details_backdrop_blur">Backdrop blur intensity</string>
-	<string name="details_appearance">Details screen appearance</string>
-	<string name="details_appearance_summary">Screen style, backdrop image and blur effect</string>
-	<string name="preview">Preview</string>
-	<!--Plugins-->
-	<string name="confirm_delete_plugin">Are you sure you want to delete %1$s?</string>
-	<string name="delete_plugin">Delete plugin</string>
-	<string name="deleted_plugin">Deleted %1$s plugin!</string>
-	<string name="import_from_github">Import from GitHub</string>
-	<string name="import_github_summary">You can enter a full GitHub URL or Username/Repository. Miyo will automatically find and install the plugin from the latest release.</string>
-	<string name="jar_not_loaded">JAR not loaded: %1$s</string>
-	<string name="load_failed">Failed to load plugin</string>
-	<string name="load_from_storage">Import from local storage</string>
-	<string name="load_storage_summary">You can select a JAR file from local storage, that file will be recognized as a plugin.</string>
-	<string name="load_success">Plugin imported and loaded successfully</string>
-	<string name="loaded_null">Plugin loaded as null</string>
-	<string name="manage_plugins">Manage plugins</string>
-	<string name="missing_in_plugin">Source missing in plugin: %1$s</string>
-	<string name="no_compatible_method">No compatible method found: %1$s(%2$s)</string>
-	<string name="no_plugins">No plugins installed</string>
-	<string name="no_plugins_summary">Click + above to add external plugins</string>
-	<string name="overwrite_plugin">Overwrite plugin?</string>
-	<string name="overwrite_plugin_summary">A plugin file named %1$s is already installed. Replace it with this one?</string>
-	<string name="plugin_name">Plugin name</string>
-	<string name="plugin_not_found">No plugin found for source: %1$s</string>
-	<string name="set_plugin_name">Set name for this plugin</string>
-	<string name="unknown_source">Unknown source: %1$s</string>
+        <string name="experiment">Experiment</string>
+        <string name="details_backdrop">Set large cover as backdrop</string>
+        <string name="details_backdrop_summary">Show a large cover image at the top as a backdrop image (like Tachiyomi)</string>
+        <string name="details_backdrop_blur">Backdrop blur intensity</string>
+        <string name="details_appearance">Details screen appearance</string>
+        <string name="details_appearance_summary">Screen style, backdrop image and blur effect</string>
+        <string name="preview">Preview</string>
+        <!--Plugins-->
+        <string name="confirm_delete_plugin">Are you sure you want to delete %1$s?</string>
+        <string name="delete_plugin">Delete plugin</string>
+        <string name="deleted_plugin">Deleted %1$s plugin!</string>
+        <string name="import_from_github">Import from GitHub</string>
+        <string name="import_github_summary">You can enter a full GitHub URL or Username/Repository. Miyo will automatically find and install the plugin from the latest release.</string>
+        <string name="jar_not_loaded">JAR not loaded: %1$s</string>
+        <string name="load_failed">Failed to load plugin</string>
+        <string name="load_from_storage">Import from local storage</string>
+        <string name="load_storage_summary">You can select a JAR file (Kotatsu plugin) or APK file (Keiyoushi extension) from local storage.</string>
+        <string name="load_success">Plugin imported and loaded successfully</string>
+        <string name="loaded_null">Plugin loaded as null</string>
+        <string name="manage_plugins">Manage plugins</string>
+        <string name="missing_in_plugin">Source missing in plugin: %1$s</string>
+        <string name="no_compatible_method">No compatible method found: %1$s(%2$s)</string>
+        <string name="no_plugins">No plugins installed</string>
+        <string name="no_plugins_summary">Click + above to add external plugins</string>
+        <string name="overwrite_plugin">Overwrite plugin?</string>
+        <string name="overwrite_plugin_summary">A plugin file named %1$s is already installed. Replace it with this one?</string>
+        <string name="plugin_name">Plugin name</string>
+        <string name="plugin_not_found">No plugin found for source: %1$s</string>
+        <string name="set_plugin_name">Set name for this plugin</string>
+        <string name="unknown_source">Unknown source: %1$s</string>
+        <string name="unsupported_plugin_format">Unsupported plugin format</string>
+        <string name="unsupported_plugin_format_message">The file \"%1$s\" is not a supported plugin format. MIYO supports Kotatsu JAR plugins and Keiyoushi/Tachiyomi APK extensions.</string>
 
-	<!-- Settings section titles -->
-	<string name="section_reading_mode">Reading mode</string>
-	<string name="section_zoom_layout">Zoom &amp; layout</string>
-	<string name="section_controls">Navigation &amp; controls</string>
-	<string name="section_image_enhancement">Image enhancement</string>
-	<string name="section_display">Display</string>
-	<string name="section_performance">Performance &amp; data</string>
-	<string name="section_storage">Storage</string>
-	<string name="section_downloading">Downloading</string>
+        <!-- Keiyoushi / Tachiyomi extension support -->
+        <string name="keiyoushi_extensions">Keiyoushi extensions</string>
+        <string name="keiyoushi_browse">Browse Keiyoushi</string>
+        <string name="keiyoushi_install">Install</string>
+        <string name="keiyoushi_installed">Installed</string>
+        <string name="keiyoushi_installing">Installing…</string>
+        <string name="keiyoushi_install_success">Extension installed successfully</string>
+        <string name="keiyoushi_install_failed">Failed to install extension: %1$s</string>
+        <string name="keiyoushi_uninstall">Uninstall extension</string>
+        <string name="keiyoushi_loading_index">Loading extension catalog…</string>
+        <string name="keiyoushi_index_failed">Failed to load extension catalog. Check your internet connection.</string>
+        <string name="keiyoushi_nsfw">NSFW</string>
+        <string name="keiyoushi_extension_error">Extension error: %1$s</string>
+        <string name="keiyoushi_update_available">Update available</string>
+        <string name="keiyoushi_no_extensions_found">No extensions found</string>
+        <string name="extension_load_error">Extension failed to load: %1$s</string>
+        <string name="extension_type_keiyoushi">Keiyoushi</string>
+        <string name="extension_type_kotatsu">Kotatsu</string>
+        <string name="plugin_error_handler_title">Plugin errors</string>
+        <string name="plugin_error_summary">%1$d plugin(s) with errors</string>
+
+        <!-- Settings section titles -->
+        <string name="section_reading_mode">Reading mode</string>
+        <string name="section_zoom_layout">Zoom &amp; layout</string>
+        <string name="section_controls">Navigation &amp; controls</string>
+        <string name="section_image_enhancement">Image enhancement</string>
+        <string name="section_display">Display</string>
+        <string name="section_performance">Performance &amp; data</string>
+        <string name="section_storage">Storage</string>
+        <string name="section_downloading">Downloading</string>
 </resources>
