@@ -32,7 +32,8 @@ class KeiyoushiBrowseViewModel @Inject constructor(
 	/** Cached list of all extensions from the last successful fetch. */
 	private var cachedExtensions: List<KeiyoushiExtension> = emptyList()
 
-	val content: StateFlow<List<ListModel>> = MutableStateFlow(listOf(LoadingState))
+	private val _content = MutableStateFlow<List<ListModel>>(listOf(LoadingState))
+	val content: StateFlow<List<ListModel>> get() = _content
 
 	val repoUrls: List<String> get() = repoManager.getRepoUrls()
 
@@ -42,7 +43,7 @@ class KeiyoushiBrowseViewModel @Inject constructor(
 
 	fun loadExtensions() {
 		launchJob(Dispatchers.Default) {
-			content.value = listOf(LoadingState)
+			_content.value = listOf(LoadingState)
 			val extensions = repoManager.fetchAllIndexes()
 			if (extensions.isEmpty()) {
 				// Try cached data
@@ -51,7 +52,7 @@ class KeiyoushiBrowseViewModel @Inject constructor(
 					cachedExtensions = cached
 					publishExtensions(cached)
 				} else {
-					content.value = listOf(
+					_content.value = listOf(
 						KeiyoushiExtensionItem.Hint(
 							title = context.getString(R.string.keiyoushi_no_extensions_found),
 						),
@@ -158,7 +159,7 @@ class KeiyoushiBrowseViewModel @Inject constructor(
 		}
 
 		if (items.isEmpty()) {
-			content.value = listOf(
+			_content.value = listOf(
 				KeiyoushiExtensionItem.Hint(
 					title = if (q.isNullOrBlank())
 						context.getString(R.string.keiyoushi_no_extensions_found)
@@ -167,7 +168,7 @@ class KeiyoushiBrowseViewModel @Inject constructor(
 				),
 			)
 		} else {
-			content.value = items
+			_content.value = items
 		}
 	}
 
