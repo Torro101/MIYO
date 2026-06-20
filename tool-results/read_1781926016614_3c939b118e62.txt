@@ -1,0 +1,674 @@
+     1→     1→package org.koharu.miyo.reader.ui
+     2→     2→
+     3→     3→import android.net.Uri
+     4→     4→import androidx.annotation.AnyThread
+     5→     5→import androidx.annotation.MainThread
+     6→     6→import androidx.annotation.WorkerThread
+     7→     7→import androidx.lifecycle.SavedStateHandle
+     8→     8→import androidx.lifecycle.viewModelScope
+     9→     9→import dagger.hilt.android.lifecycle.HiltViewModel
+    10→    10→import kotlinx.coroutines.CancellationException
+    11→    11→import kotlinx.coroutines.Dispatchers
+    12→    12→import kotlinx.coroutines.Job
+    13→    13→import kotlinx.coroutines.cancelAndJoin
+    14→    14→import kotlinx.coroutines.ensureActive
+    15→    15→import kotlinx.coroutines.flow.MutableStateFlow
+    16→    16→import kotlinx.coroutines.flow.SharedFlow
+    17→    17→import kotlinx.coroutines.flow.SharingStarted
+    18→    18→import kotlinx.coroutines.flow.combine
+    19→    19→import kotlinx.coroutines.flow.filterNotNull
+    20→    20→import kotlinx.coroutines.flow.first
+    21→    21→import kotlinx.coroutines.flow.flatMapLatest
+    22→    22→import kotlinx.coroutines.flow.flowOf
+    23→    23→import kotlinx.coroutines.flow.flowOn
+    24→    24→import kotlinx.coroutines.flow.map
+    25→    25→import kotlinx.coroutines.flow.mapNotNull
+    26→    26→import kotlinx.coroutines.flow.stateIn
+    27→    27→import kotlinx.coroutines.flow.update
+    28→    28→import kotlinx.coroutines.plus
+    29→    29→import org.koharu.miyo.R
+    30→    30→import org.koharu.miyo.bookmarks.domain.Bookmark
+    31→    31→import org.koharu.miyo.bookmarks.domain.BookmarksRepository
+    32→    32→import org.koharu.miyo.core.exceptions.EmptyMangaException
+    33→    33→import org.koharu.miyo.core.model.LocalMangaSource
+    34→    34→import org.koharu.miyo.core.model.getPreferredBranch
+    35→    35→import org.koharu.miyo.core.nav.MangaIntent
+    36→    36→import org.koharu.miyo.core.nav.ReaderIntent
+    37→    37→import org.koharu.miyo.core.os.AppShortcutManager
+    38→    38→import org.koharu.miyo.core.parser.MangaDataRepository
+    39→    39→import org.koharu.miyo.core.prefs.AppSettings
+    40→    40→import org.koharu.miyo.core.prefs.ReaderMode
+    41→    41→import org.koharu.miyo.core.prefs.TriStateOption
+    42→    42→import org.koharu.miyo.core.prefs.observeAsFlow
+    43→    43→import org.koharu.miyo.core.prefs.observeAsStateFlow
+    44→    44→import org.koharu.miyo.core.util.ext.MutableEventFlow
+    45→    45→import org.koharu.miyo.core.util.ext.call
+    46→    46→import org.koharu.miyo.core.util.ext.firstNotNull
+    47→    47→import org.koharu.miyo.core.util.ext.requireValue
+    48→    48→import org.koharu.miyo.details.data.MangaDetails
+    49→    49→import org.koharu.miyo.details.domain.DetailsInteractor
+    50→    50→import org.koharu.miyo.details.domain.DetailsLoadUseCase
+    51→    51→import org.koharu.miyo.details.ui.pager.ChaptersPagesViewModel
+    52→    52→import org.koharu.miyo.details.ui.pager.EmptyMangaReason
+    53→    53→import org.koharu.miyo.download.ui.worker.DownloadWorker
+    54→    54→import org.koharu.miyo.history.data.HistoryRepository
+    55→    55→import org.koharu.miyo.history.domain.HistoryUpdateUseCase
+    56→    56→import org.koharu.miyo.list.domain.ReadingProgress.Companion.PROGRESS_NONE
+    57→    57→import org.koharu.miyo.local.data.LocalStorageChanges
+    58→    58→import org.koharu.miyo.local.domain.DeleteLocalMangaUseCase
+    59→    59→import org.koharu.miyo.local.domain.model.LocalManga
+    60→    60→import org.koitharu.kotatsu.parsers.model.ContentRating
+    61→    61→import org.koitharu.kotatsu.parsers.model.Manga
+    62→    62→import org.koitharu.kotatsu.parsers.model.MangaPage
+    63→    63→import org.koitharu.kotatsu.parsers.util.ifNullOrEmpty
+    64→    64→import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
+    65→    65→import org.koitharu.kotatsu.parsers.util.sizeOrZero
+    66→    66→import org.koharu.miyo.reader.domain.ChaptersLoader
+    67→    67→import org.koharu.miyo.reader.domain.DetectReaderModeUseCase
+    68→    68→import org.koharu.miyo.reader.domain.PageLoader
+    69→    69→import org.koharu.miyo.reader.ui.config.ReaderSettings
+    70→    70→import org.koharu.miyo.reader.ui.pager.ReaderUiState
+    71→    71→import org.koharu.miyo.scrobbling.discord.ui.DiscordRpc
+    72→    72→import org.koharu.miyo.stats.domain.StatsCollector
+    73→    73→import java.time.Instant
+    74→    74→import javax.inject.Inject
+    75→    75→
+    76→    76→private const val BOUNDS_PAGE_OFFSET = 2
+    77→    77→private const val PREFETCH_LIMIT = 10
+    78→    78→
+    79→    79→@HiltViewModel
+    80→    80→class ReaderViewModel @Inject constructor(
+    81→    81→    private val savedStateHandle: SavedStateHandle,
+    82→    82→    private val dataRepository: MangaDataRepository,
+    83→    83→    private val historyRepository: HistoryRepository,
+    84→    84→    private val bookmarksRepository: BookmarksRepository,
+    85→    85→    settings: AppSettings,
+    86→    86→    private val pageLoader: PageLoader,
+    87→    87→    private val chaptersLoader: ChaptersLoader,
+    88→    88→    private val appShortcutManager: AppShortcutManager,
+    89→    89→    private val detailsLoadUseCase: DetailsLoadUseCase,
+    90→    90→    private val historyUpdateUseCase: HistoryUpdateUseCase,
+    91→    91→    private val detectReaderModeUseCase: DetectReaderModeUseCase,
+    92→    92→    private val statsCollector: StatsCollector,
+    93→    93→    private val discordRpc: DiscordRpc,
+    94→    94→    @LocalStorageChanges localStorageChanges: SharedFlow<LocalManga?>,
+    95→    95→    interactor: DetailsInteractor,
+    96→    96→    deleteLocalMangaUseCase: DeleteLocalMangaUseCase,
+    97→    97→    downloadScheduler: DownloadWorker.Scheduler,
+    98→    98→    readerSettingsProducerFactory: ReaderSettings.Producer.Factory,
+    99→    99→) : ChaptersPagesViewModel(
+   100→   100→    settings = settings,
+   101→   101→    interactor = interactor,
+   102→   102→    bookmarksRepository = bookmarksRepository,
+   103→   103→    historyRepository = historyRepository,
+   104→   104→    downloadScheduler = downloadScheduler,
+   105→   105→    deleteLocalMangaUseCase = deleteLocalMangaUseCase,
+   106→   106→    localStorageChanges = localStorageChanges,
+   107→   107→) {
+   108→   108→    private val intent = MangaIntent(savedStateHandle)
+   109→   109→
+   110→   110→    private var loadingJob: Job? = null
+   111→   111→    private var pageSaveJob: Job? = null
+   112→   112→    private var bookmarkJob: Job? = null
+   113→   113→    private var stateChangeJob: Job? = null
+   114→   114→
+   115→   115→    init {
+   116→   116→        mangaDetails.value = intent.manga?.let { MangaDetails(it) }
+   117→   117→    }
+   118→   118→
+   119→   119→    val readerMode = MutableStateFlow<ReaderMode?>(null)
+   120→   120→    val onPageSaved = MutableEventFlow<Collection<Uri>>()
+   121→   121→    val onLoadingError = MutableEventFlow<Throwable>()
+   122→   122→    val onShowToast = MutableEventFlow<Int>()
+   123→   123→    val onAskNsfwIncognito = MutableEventFlow<Unit>()
+   124→   124→    val uiState = MutableStateFlow<ReaderUiState?>(null)
+   125→   125→
+   126→   126→    val isIncognitoMode = MutableStateFlow(savedStateHandle.get<Boolean>(ReaderIntent.EXTRA_INCOGNITO))
+   127→   127→
+   128→   128→    val content = MutableStateFlow(ReaderContent(emptyList(), null))
+   129→   129→
+   130→   130→    val pageAnimation = settings.observeAsStateFlow(
+   131→   131→        scope = viewModelScope + Dispatchers.Default,
+   132→   132→        key = AppSettings.KEY_READER_ANIMATION,
+   133→   133→        valueProducer = { readerAnimation },
+   134→   134→    )
+   135→   135→
+   136→   136→    val isInfoBarEnabled = settings.observeAsStateFlow(
+   137→   137→        scope = viewModelScope + Dispatchers.Default,
+   138→   138→        key = AppSettings.KEY_READER_BAR,
+   139→   139→        valueProducer = { isReaderBarEnabled },
+   140→   140→    )
+   141→   141→
+   142→   142→    val isInfoBarTransparent = settings.observeAsStateFlow(
+   143→   143→        scope = viewModelScope + Dispatchers.Default,
+   144→   144→        key = AppSettings.KEY_READER_BAR_TRANSPARENT,
+   145→   145→        valueProducer = { isReaderBarTransparent },
+   146→   146→    )
+   147→   147→
+   148→   148→    val isKeepScreenOnEnabled = settings.observeAsStateFlow(
+   149→   149→        scope = viewModelScope + Dispatchers.Default,
+   150→   150→        key = AppSettings.KEY_READER_SCREEN_ON,
+   151→   151→        valueProducer = { isReaderKeepScreenOn },
+   152→   152→    )
+   153→   153→
+   154→   154→    val isWebtoonZooEnabled = observeIsWebtoonZoomEnabled()
+   155→   155→        .stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Lazily, false)
+   156→   156→
+   157→   157→    val isWebtoonGapsEnabled = settings.observeAsStateFlow(
+   158→   158→        scope = viewModelScope + Dispatchers.Default,
+   159→   159→        key = AppSettings.KEY_WEBTOON_GAPS,
+   160→   160→        valueProducer = { isWebtoonGapsEnabled },
+   161→   161→    )
+   162→   162→
+   163→   163→    val isWebtoonPullGestureEnabled = settings.observeAsStateFlow(
+   164→   164→        scope = viewModelScope + Dispatchers.Default,
+   165→   165→        key = AppSettings.KEY_WEBTOON_PULL_GESTURE,
+   166→   166→        valueProducer = { isWebtoonPullGestureEnabled },
+   167→   167→    )
+   168→   168→
+   169→   169→    val defaultWebtoonZoomOut = observeIsWebtoonZoomEnabled().flatMapLatest {
+   170→   170→        if (it) {
+   171→   171→            observeWebtoonZoomOut()
+   172→   172→        } else {
+   173→   173→            flowOf(0f)
+   174→   174→        }
+   175→   175→    }.flowOn(Dispatchers.Default)
+   176→   176→
+   177→   177→    val isZoomControlsEnabled = getObserveIsZoomControlEnabled().flatMapLatest { zoom ->
+   178→   178→        if (zoom) {
+   179→   179→            combine(readerMode, isWebtoonZooEnabled) { mode, ze -> ze || mode != ReaderMode.WEBTOON }
+   180→   180→        } else {
+   181→   181→            flowOf(false)
+   182→   182→        }
+   183→   183→    }.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Lazily, false)
+   184→   184→
+   185→   185→    val readerSettingsProducer = readerSettingsProducerFactory.create(
+   186→   186→        manga.mapNotNull { it?.id },
+   187→   187→    )
+   188→   188→
+   189→   189→    val isMangaNsfw = manga.map { it?.contentRating == ContentRating.ADULT }
+   190→   190→
+   191→   191→    val isBookmarkAdded = readingState.flatMapLatest { state ->
+   192→   192→        val manga = mangaDetails.value?.toManga()
+   193→   193→        if (state == null || manga == null) {
+   194→   194→            flowOf(false)
+   195→   195→        } else {
+   196→   196→            bookmarksRepository.observeBookmark(manga, state.chapterId, state.page)
+   197→   197→                .map {
+   198→   198→                    it != null && it.chapterId == state.chapterId && it.page == state.page
+   199→   199→                }
+   200→   200→        }
+   201→   201→    }.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, false)
+   202→   202→
+   203→   203→    init {
+   204→   204→        initIncognitoMode()
+   205→   205→        loadImpl()
+   206→   206→        launchJob(Dispatchers.Default) {
+   207→   207→            val mangaId = manga.filterNotNull().first().id
+   208→   208→            if (!isIncognitoMode.firstNotNull()) {
+   209→   209→                appShortcutManager.notifyMangaOpened(mangaId)
+   210→   210→            }
+   211→   211→        }
+   212→   212→    }
+   213→   213→
+   214→   214→    fun reload() {
+   215→   215→        loadingJob?.cancel()
+   216→   216→        loadImpl()
+   217→   217→    }
+   218→   218→
+   219→   219→    fun onPause() {
+   220→   220→        getMangaOrNull()?.let {
+   221→   221→            statsCollector.onPause(it.id)
+   222→   222→        }
+   223→   223→    }
+   224→   224→
+   225→   225→    fun onStop() {
+   226→   226→        discordRpc.clearRpc()
+   227→   227→    }
+   228→   228→
+   229→   229→    fun onIdle() {
+   230→   230→        discordRpc.setIdle()
+   231→   231→    }
+   232→   232→
+   233→   233→    fun switchMode(newMode: ReaderMode) {
+   234→   234→        launchJob {
+   235→   235→            val manga = checkNotNull(getMangaOrNull())
+   236→   236→            dataRepository.saveReaderMode(
+   237→   237→                manga = manga,
+   238→   238→                mode = newMode,
+   239→   239→            )
+   240→   240→            readerMode.value = newMode
+   241→   241→            content.update {
+   242→   242→                it.copy(state = getCurrentState())
+   243→   243→            }
+   244→   244→        }
+   245→   245→    }
+   246→   246→
+   247→   247→    fun saveCurrentState(state: ReaderState? = null) {
+   248→   248→        if (state != null) {
+   249→   249→            readingState.value = state
+   250→   250→            savedStateHandle[ReaderIntent.EXTRA_STATE] = state
+   251→   251→        }
+   252→   252→        if (isIncognitoMode.value != false) {
+   253→   253→            return
+   254→   254→        }
+   255→   255→        val readerState = state ?: readingState.value ?: return
+   256→   256→        historyUpdateUseCase.invokeAsync(
+   257→   257→            manga = getMangaOrNull() ?: return,
+   258→   258→            readerState = readerState,
+   259→   259→            percent = computePercent(readerState.chapterId, readerState.page),
+   260→   260→        )
+   261→   261→    }
+   262→   262→
+   263→   263→    fun getCurrentState() = readingState.value
+   264→   264→
+   265→   265→    fun getCurrentChapterPages(): List<MangaPage>? {
+   266→   266→        val chapterId = readingState.value?.chapterId ?: return null
+   267→   267→        return chaptersLoader.getPages(chapterId)
+   268→   268→    }
+   269→   269→
+   270→   270→    fun saveCurrentPage(
+   271→   271→        pageSaveHelper: PageSaveHelper
+   272→   272→    ) {
+   273→   273→        val prevJob = pageSaveJob
+   274→   274→        pageSaveJob = launchLoadingJob(Dispatchers.Default) {
+   275→   275→            prevJob?.cancelAndJoin()
+   276→   276→            val state = checkNotNull(getCurrentState())
+   277→   277→            val currentManga = manga.requireValue()
+   278→   278→            val task = PageSaveHelper.Task(
+   279→   279→                manga = currentManga,
+   280→   280→                chapterId = state.chapterId,
+   281→   281→                pageNumber = state.page + 1,
+   282→   282→                page = checkNotNull(getCurrentPage()) { "Cannot find current page" },
+   283→   283→            )
+   284→   284→            val dest = pageSaveHelper.save(setOf(task))
+   285→   285→            onPageSaved.call(dest)
+   286→   286→        }
+   287→   287→    }
+   288→   288→
+   289→   289→    fun getCurrentPage(): MangaPage? {
+   290→   290→        val state = readingState.value ?: return null
+   291→   291→        return content.value.pages.find {
+   292→   292→            it.chapterId == state.chapterId && it.index == state.page
+   293→   293→        }?.toMangaPage()
+   294→   294→    }
+   295→   295→
+   296→   296→    fun switchChapter(id: Long, page: Int) {
+   297→   297→        val prevJob = loadingJob
+   298→   298→        loadingJob = launchLoadingJob(Dispatchers.Default) {
+   299→   299→            prevJob?.cancelAndJoin()
+   300→   300→            content.value = ReaderContent(emptyList(), null)
+   301→   301→            chaptersLoader.loadSingleChapter(id)
+   302→   302→            val newState = ReaderState(id, page, 0)
+   303→   303→            preloadNextChapterAfterLocal(newState.chapterId, mangaDetails.requireValue())
+   304→   304→            content.value = ReaderContent(chaptersLoader.snapshot(), newState)
+   305→   305→            saveCurrentState(newState)
+   306→   306→        }
+   307→   307→    }
+   308→   308→
+   309→   309→    fun switchChapterBy(delta: Int) {
+   310→   310→        val prevJob = loadingJob
+   311→   311→        loadingJob = launchLoadingJob(Dispatchers.Default) {
+   312→   312→            prevJob?.cancelAndJoin()
+   313→   313→            val prevState = readingState.requireValue()
+   314→   314→            val newChapterId = if (delta != 0) {
+   315→   315→                val allChapters = mangaDetails.requireValue().allChapters
+   316→   316→                var index = allChapters.indexOfFirst { x -> x.id == prevState.chapterId }
+   317→   317→                if (index < 0) {
+   318→   318→                    return@launchLoadingJob
+   319→   319→                }
+   320→   320→                index += delta
+   321→   321→                (allChapters.getOrNull(index) ?: return@launchLoadingJob).id
+   322→   322→            } else {
+   323→   323→                prevState.chapterId
+   324→   324→            }
+   325→   325→            content.value = ReaderContent(emptyList(), null)
+   326→   326→            chaptersLoader.loadSingleChapter(newChapterId)
+   327→   327→            val newState = ReaderState(
+   328→   328→                chapterId = newChapterId,
+   329→   329→                page = if (delta == 0) prevState.page else 0,
+   330→   330→                scroll = if (delta == 0) prevState.scroll else 0,
+   331→   331→            )
+   332→   332→            preloadNextChapterAfterLocal(newState.chapterId, mangaDetails.requireValue())
+   333→   333→            content.value = ReaderContent(chaptersLoader.snapshot(), newState)
+   334→   334→            saveCurrentState(newState)
+   335→   335→        }
+   336→   336→    }
+   337→   337→
+   338→   338→    @MainThread
+   339→   339→    fun onCurrentPageChanged(lowerPos: Int, upperPos: Int) {
+   340→   340→        val prevJob = stateChangeJob
+   341→   341→        val pages = content.value.pages // capture immediately
+   342→   342→        val centerPos = (lowerPos + upperPos) / 2
+   343→   343→        val capturedPage = pages.getOrNull(centerPos)
+   344→   344→        // Capture the visible window relative to the captured center, so the
+   345→   345→        // relative position around the page is preserved even when the page
+   346→   346→        // list changes (chapter switch) between the main-thread capture and
+   347→   347→        // the post-join recompute below.
+   348→   348→        val visibleBeforeCapture = (centerPos - lowerPos).coerceAtLeast(0)
+   349→   349→        val visibleAfterCapture = (upperPos - centerPos).coerceAtLeast(0)
+   350→   350→        stateChangeJob = launchJob(Dispatchers.Default) {
+   351→   351→            prevJob?.cancelAndJoin()
+   352→   352→            loadingJob?.join()
+   353→   353→            val currentPages = content.value.pages
+   354→   354→            val resolvedCenterPos = capturedPage?.let { page ->
+   355→   355→                currentPages.indexOfFirst {
+   356→   356→                    it.id == page.id && it.chapterId == page.chapterId && it.index == page.index
+   357→   357→                }.takeIf { it >= 0 }
+   358→   358→            } ?: centerPos.coerceIn(0, currentPages.lastIndex.coerceAtLeast(0))
+   359→   359→            val currentPage = currentPages.getOrNull(resolvedCenterPos)
+   360→   360→            if (currentPage != null) {
+   361→   361→                readingState.update { cs ->
+   362→   362→                    cs?.copy(chapterId = currentPage.chapterId, page = currentPage.index)
+   363→   363→                }
+   364→   364→            }
+   365→   365→            notifyStateChanged()
+   366→   366→            if (currentPages.isEmpty() || loadingJob?.isActive == true) {
+   367→   367→                return@launchJob
+   368→   368→            }
+   369→   369→            ensureActive()
+   370→   370→            // Clamp the captured window to the post-join page list size so we
+   371→   371→            // never try to read or prefetch past the end after a chapter shrink.
+   372→   372→            val lastIndex = currentPages.lastIndex
+   373→   373→            val visibleBefore = visibleBeforeCapture.coerceAtMost(resolvedCenterPos)
+   374→   374→            val visibleAfter = visibleAfterCapture.coerceAtMost(lastIndex - resolvedCenterPos)
+   375→   375→            val resolvedLowerPos = (resolvedCenterPos - visibleBefore).coerceAtLeast(0)
+   376→   376→            val resolvedUpperPos = (resolvedCenterPos + visibleAfter).coerceAtMost(lastIndex)
+   377→   377→            val autoLoadAllowed = readerMode.value != ReaderMode.WEBTOON || !isWebtoonPullGestureEnabled.value
+   378→   378→            if (autoLoadAllowed) {
+   379→   379→                if (resolvedUpperPos >= currentPages.lastIndex - BOUNDS_PAGE_OFFSET) {
+   380→   380→                    loadPrevNextChapter(currentPages.last().chapterId, isNext = true)
+   381→   381→                }
+   382→   382→                if (resolvedLowerPos <= BOUNDS_PAGE_OFFSET) {
+   383→   383→                    loadPrevNextChapter(currentPages.first().chapterId, isNext = false)
+   384→   384→                }
+   385→   385→            }
+   386→   386→            val prefetchPages = currentPages.trySublist(
+   387→   387→                fromIndex = resolvedUpperPos + 1,
+   388→   388→                toIndex = resolvedUpperPos + 1 + PREFETCH_LIMIT,
+   389→   389→            )
+   390→   390→            if (pageLoader.isPrefetchApplicable(prefetchPages)) {
+   391→   391→                pageLoader.prefetch(prefetchPages)
+   392→   392→            }
+   393→   393→        }
+   394→   394→    }
+   395→   395→
+   396→   396→    fun toggleBookmark() {
+   397→   397→        if (bookmarkJob?.isActive == true) {
+   398→   398→            return
+   399→   399→        }
+   400→   400→        bookmarkJob = launchJob(Dispatchers.Default) {
+   401→   401→            loadingJob?.join()
+   402→   402→            val state = checkNotNull(getCurrentState())
+   403→   403→            if (isBookmarkAdded.value) {
+   404→   404→                val manga = requireManga()
+   405→   405→                bookmarksRepository.removeBookmark(manga.id, state.chapterId, state.page)
+   406→   406→                onShowToast.call(R.string.bookmark_removed)
+   407→   407→            } else {
+   408→   408→                val page = checkNotNull(getCurrentPage()) { "Page not found" }
+   409→   409→                val bookmark = Bookmark(
+   410→   410→                    manga = requireManga(),
+   411→   411→                    pageId = page.id,
+   412→   412→                    chapterId = state.chapterId,
+   413→   413→                    page = state.page,
+   414→   414→                    scroll = state.scroll,
+   415→   415→                    imageUrl = page.preview.ifNullOrEmpty { page.url },
+   416→   416→                    createdAt = Instant.now(),
+   417→   417→                    percent = computePercent(state.chapterId, state.page),
+   418→   418→                )
+   419→   419→                bookmarksRepository.addBookmark(bookmark)
+   420→   420→                onShowToast.call(R.string.bookmark_added)
+   421→   421→            }
+   422→   422→        }
+   423→   423→    }
+   424→   424→
+   425→   425→    fun setIncognitoMode(value: Boolean, dontAskAgain: Boolean) {
+   426→   426→        isIncognitoMode.value = value
+   427→   427→        if (dontAskAgain) {
+   428→   428→            settings.incognitoModeForNsfw = if (value) TriStateOption.ENABLED else TriStateOption.DISABLED
+   429→   429→        }
+   430→   430→    }
+   431→   431→
+   432→   432→    private fun loadImpl() {
+   433→   433→        loadingJob = launchLoadingJob(Dispatchers.Default + EventExceptionHandler(onLoadingError)) {
+   434→   434→            var exception: Exception? = null
+   435→   435→            var loadedDetails: MangaDetails? = null
+   436→   436→            try {
+   437→   437→                detailsLoadUseCase(intent, force = false, preferLocalChapters = true)
+   438→   438→                    .collect { details ->
+   439→   439→                        loadedDetails = details
+   440→   440→                        if (mangaDetails.value == null) {
+   441→   441→                            mangaDetails.value = details
+   442→   442→                        }
+   443→   443→                        chaptersLoader.init(details)
+   444→   444→                        val manga = details.toManga()
+   445→   445→                        // obtain state
+   446→   446→                        if (readingState.value == null) {
+   447→   447→                            val newState = getStateFromIntent(manga)
+   448→   448→                            if (newState == null) {
+   449→   449→                                return@collect // manga not loaded yet if cannot get state
+   450→   450→                            }
+   451→   451→                            if (!details.canLoadInitialChapter(newState.chapterId)) {
+   452→   452→                                mangaDetails.value = details.filterChapters(selectedBranch.value)
+   453→   453→                                return@collect
+   454→   454→                            }
+   455→   455→                            readingState.value = newState
+   456→   456→                            val mode = runCatchingCancellable {
+   457→   457→                                detectReaderModeUseCase(manga, newState)
+   458→   458→                            }.getOrDefault(settings.defaultReaderMode)
+   459→   459→                            val branch = chaptersLoader.peekChapter(newState.chapterId)?.branch
+   460→   460→                            selectedBranch.value = branch
+   461→   461→                            readerMode.value = mode
+   462→   462→                            try {
+   463→   463→                                chaptersLoader.loadSingleChapter(newState.chapterId)
+   464→   464→                                preloadNextChapterAfterLocal(newState.chapterId, details)
+   465→   465→                            } catch (e: Exception) {
+   466→   466→                                readingState.value = null // try next time
+   467→   467→                                exception = e.mergeWith(exception)
+   468→   468→                                return@collect
+   469→   469→                            }
+   470→   470→                        }
+   471→   471→                        mangaDetails.value = details.filterChapters(selectedBranch.value)
+   472→   472→
+   473→   473→                        // save state
+   474→   474→                        if (!isIncognitoMode.firstNotNull()) {
+   475→   475→                            readingState.value?.let {
+   476→   476→                                val percent = computePercent(it.chapterId, it.page)
+   477→   477→                                historyUpdateUseCase(manga, it, percent)
+   478→   478→                            }
+   479→   479→                        }
+   480→   480→                        notifyStateChanged()
+   481→   481→                        content.value = ReaderContent(chaptersLoader.snapshot(), readingState.value)
+   482→   482→                    }
+   483→   483→            } catch (e: CancellationException) {
+   484→   484→                throw e
+   485→   485→            } catch (e: Exception) {
+   486→   486→                exception = e.mergeWith(exception)
+   487→   487→            }
+   488→   488→            if (readingState.value == null) {
+   489→   489→                val loadedManga = loadedDetails // for smart cast
+   490→   490→                if (loadedManga != null) {
+   491→   491→                    mangaDetails.value = loadedManga.filterChapters(selectedBranch.value)
+   492→   492→                }
+   493→   493→                val loadingError = when {
+   494→   494→                    exception != null -> exception
+   495→   495→                    loadedManga == null || !loadedManga.isLoaded -> null
+   496→   496→                    loadedManga.isRestricted -> EmptyMangaException(
+   497→   497→                        EmptyMangaReason.RESTRICTED,
+   498→   498→                        loadedManga.toManga(),
+   499→   499→                        null,
+   500→   500→                    )
+   501→   501→
+   502→   502→                    loadedManga.allChapters.isEmpty() -> EmptyMangaException(
+   503→   503→                        EmptyMangaReason.NO_CHAPTERS,
+   504→   504→                        loadedManga.toManga(),
+   505→   505→                        null,
+   506→   506→                    )
+   507→   507→
+   508→   508→                    else -> null
+   509→   509→                } ?: IllegalStateException("Unable to load manga. This should never happen. Please report")
+   510→   510→                onLoadingError.call(loadingError)
+   511→   511→            } else exception?.let { e ->
+   512→   512→                // manga has been loaded but error occurred
+   513→   513→                errorEvent.call(e)
+   514→   514→            }
+   515→   515→        }
+   516→   516→    }
+   517→   517→
+   518→   518→    private fun MangaDetails.canLoadInitialChapter(chapterId: Long): Boolean {
+   519→   519→        return isLoaded || isLocal || chaptersLoader.peekChapter(chapterId)?.source == LocalMangaSource
+   520→   520→    }
+   521→   521→
+   522→   522→    private suspend fun preloadNextChapterAfterLocal(currentId: Long, details: MangaDetails) {
+   523→   523→        if (!settings.isPagesPreloadEnabled) {
+   524→   524→            return
+   525→   525→        }
+   526→   526→        if (readerMode.value == ReaderMode.WEBTOON && isWebtoonPullGestureEnabled.value) {
+   527→   527→            return
+   528→   528→        }
+   529→   529→        val chapter = chaptersLoader.peekChapter(currentId) ?: return
+   530→   530→        if (chapter.source != LocalMangaSource) {
+   531→   531→            return
+   532→   532→        }
+   533→   533→        runCatchingCancellable {
+   534→   534→            chaptersLoader.loadPrevNextChapter(details, currentId, isNext = true)
+   535→   535→        }.getOrNull()
+   536→   536→    }
+   537→   537→
+   538→   538→    @AnyThread
+   539→   539→    private fun loadPrevNextChapter(currentId: Long, isNext: Boolean) {
+   540→   540→        val prevJob = loadingJob
+   541→   541→        loadingJob = launchLoadingJob(Dispatchers.Default) {
+   542→   542→            prevJob?.join()
+   543→   543→            chaptersLoader.loadPrevNextChapter(mangaDetails.requireValue(), currentId, isNext)
+   544→   544→            content.value = ReaderContent(chaptersLoader.snapshot(), null)
+   545→   545→        }
+   546→   546→    }
+   547→   547→
+   548→   548→    private fun <T> List<T>.trySublist(fromIndex: Int, toIndex: Int): List<T> {
+   549→   549→        val fromIndexBounded = fromIndex.coerceIn(0, size)
+   550→   550→        val toIndexBounded = toIndex.coerceIn(fromIndexBounded, size)
+   551→   551→        return if (fromIndexBounded == toIndexBounded) {
+   552→   552→            emptyList()
+   553→   553→        } else {
+   554→   554→            subList(fromIndexBounded, toIndexBounded)
+   555→   555→        }
+   556→   556→    }
+   557→   557→
+   558→   558→    @WorkerThread
+   559→   559→    private fun notifyStateChanged() {
+   560→   560→        val state = getCurrentState() ?: return
+   561→   561→        val chapter = chaptersLoader.peekChapter(state.chapterId) ?: return
+   562→   562→        val m = mangaDetails.value ?: return
+   563→   563→        val chapterIndex = m.chapters[chapter.branch]?.indexOfFirst { it.id == chapter.id } ?: -1
+   564→   564→        val newState = ReaderUiState(
+   565→   565→            mangaName = m.toManga().title,
+   566→   566→            chapter = chapter,
+   567→   567→            chapterIndex = chapterIndex,
+   568→   568→            chaptersTotal = m.chapters[chapter.branch].sizeOrZero(),
+   569→   569→            totalPages = chaptersLoader.getPagesCount(chapter.id),
+   570→   570→            currentPage = state.page,
+   571→   571→            percent = computePercent(state.chapterId, state.page),
+   572→   572→            incognito = isIncognitoMode.value == true,
+   573→   573→        )
+   574→   574→        uiState.value = newState
+   575→   575→        if (isIncognitoMode.value == false) {
+   576→   576→            statsCollector.onStateChanged(m.id, state)
+   577→   577→            discordRpc.updateRpc(m.toManga(), newState)
+   578→   578→        }
+   579→   579→    }
+   580→   580→
+   581→   581→    private fun computePercent(chapterId: Long, pageIndex: Int): Float {
+   582→   582→        val branch = chaptersLoader.peekChapter(chapterId)?.branch
+   583→   583→        val chapters = mangaDetails.value?.chapters?.get(branch) ?: return PROGRESS_NONE
+   584→   584→        val chaptersCount = chapters.size
+   585→   585→        val chapterIndex = chapters.indexOfFirst { x -> x.id == chapterId }
+   586→   586→        val pagesCount = chaptersLoader.getPagesCount(chapterId)
+   587→   587→        if (chaptersCount == 0 || pagesCount == 0) {
+   588→   588→            return PROGRESS_NONE
+   589→   589→        }
+   590→   590→        val pagePercent = (pageIndex + 1) / pagesCount.toFloat()
+   591→   591→        val ppc = 1f / chaptersCount
+   592→   592→        return ppc * chapterIndex + ppc * pagePercent
+   593→   593→    }
+   594→   594→
+   595→   595→    private fun observeIsWebtoonZoomEnabled() = settings.observeAsFlow(
+   596→   596→        key = AppSettings.KEY_WEBTOON_ZOOM,
+   597→   597→        valueProducer = { isWebtoonZoomEnabled },
+   598→   598→    )
+   599→   599→
+   600→   600→    private fun observeWebtoonZoomOut() = settings.observeAsFlow(
+   601→   601→        key = AppSettings.KEY_WEBTOON_ZOOM_OUT,
+   602→   602→        valueProducer = { defaultWebtoonZoomOut },
+   603→   603→    )
+   604→   604→
+   605→   605→    private fun getObserveIsZoomControlEnabled() = settings.observeAsFlow(
+   606→   606→        key = AppSettings.KEY_READER_ZOOM_BUTTONS,
+   607→   607→        valueProducer = { isReaderZoomButtonsEnabled },
+   608→   608→    )
+   609→   609→
+   610→   610→    private fun initIncognitoMode() {
+   611→   611→        if (isIncognitoMode.value != null) {
+   612→   612→            return
+   613→   613→        }
+   614→   614→        launchJob(Dispatchers.Default) {
+   615→   615→            interactor.observeIncognitoMode(manga)
+   616→   616→                .collect {
+   617→   617→                    when (it) {
+   618→   618→                        TriStateOption.ENABLED -> isIncognitoMode.value = true
+   619→   619→                        TriStateOption.ASK -> {
+   620→   620→                            onAskNsfwIncognito.call(Unit)
+   621→   621→                            return@collect
+   622→   622→                        }
+   623→   623→
+   624→   624→                        TriStateOption.DISABLED -> isIncognitoMode.value = false
+   625→   625→                    }
+   626→   626→                }
+   627→   627→        }
+   628→   628→    }
+   629→   629→
+   630→   630→    private suspend fun getStateFromIntent(manga: Manga): ReaderState? {
+   631→   631→        // check if we have at least some chapters loaded
+   632→   632→        if (manga.chapters.isNullOrEmpty()) {
+   633→   633→            return null
+   634→   634→        }
+   635→   635→        // specific state is requested
+   636→   636→        val requestedState: ReaderState? = savedStateHandle[ReaderIntent.EXTRA_STATE]
+   637→   637→        if (requestedState != null) {
+   638→   638→            return if (manga.findChapterById(requestedState.chapterId) != null) {
+   639→   639→                requestedState
+   640→   640→            } else {
+   641→   641→                null
+   642→   642→            }
+   643→   643→        }
+   644→   644→
+   645→   645→        val requestedBranch: String? = savedStateHandle[ReaderIntent.EXTRA_BRANCH]
+   646→   646→        // continue reading
+   647→   647→        val history = historyRepository.getOne(manga)
+   648→   648→        if (history != null) {
+   649→   649→            val chapter = manga.findChapterById(history.chapterId) ?: return null
+   650→   650→            // specified branch is requested
+   651→   651→            return if (ReaderIntent.EXTRA_BRANCH in savedStateHandle) {
+   652→   652→                if (chapter.branch == requestedBranch) {
+   653→   653→                    ReaderState(history)
+   654→   654→                } else {
+   655→   655→                    ReaderState(manga, requestedBranch)
+   656→   656→                }
+   657→   657→            } else {
+   658→   658→                ReaderState(history)
+   659→   659→            }
+   660→   660→        }
+   661→   661→
+   662→   662→        // start from beginning
+   663→   663→        val preferredBranch = requestedBranch ?: manga.getPreferredBranch(null)
+   664→   664→        return ReaderState(manga, preferredBranch)
+   665→   665→    }
+   666→   666→
+   667→   667→    private fun Exception.mergeWith(other: Exception?): Exception = if (other == null) {
+   668→   668→        this
+   669→   669→    } else {
+   670→   670→        other.addSuppressed(this)
+   671→   671→        other
+   672→   672→    }
+   673→   673→}
+   674→   674→

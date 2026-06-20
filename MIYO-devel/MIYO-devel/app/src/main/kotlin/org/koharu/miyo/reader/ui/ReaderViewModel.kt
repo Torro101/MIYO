@@ -478,7 +478,17 @@ class ReaderViewModel @Inject constructor(
                             }
                         }
                         notifyStateChanged()
-                        content.value = ReaderContent(chaptersLoader.snapshot(), readingState.value)
+                        // Only update content if pages have actually changed (e.g., new
+                        // chapters discovered). Re-emitting content with an updated
+                        // readingState on every details emission causes the webtoon reader
+                        // to snap back to the original reading position when the details
+                        // flow re-emits (e.g., cache → network refresh), because
+                        // onPagesChanged() scrolls to pendingState which is the INITIAL
+                        // reading position, not where the user has scrolled to since.
+                        val newPages = chaptersLoader.snapshot()
+                        if (newPages != content.value.pages) {
+                            content.value = ReaderContent(newPages, null)
+                        }
                     }
             } catch (e: CancellationException) {
                 throw e
@@ -541,7 +551,15 @@ class ReaderViewModel @Inject constructor(
         loadingJob = launchLoadingJob(Dispatchers.Default) {
             prevJob?.join()
             chaptersLoader.loadPrevNextChapter(mangaDetails.requireValue(), currentId, isNext)
-            content.value = ReaderContent(chaptersLoader.snapshot(), null)
+            // Only update content if pages have actually changed (chapter was
+            // added/trimmed). When loadPrevNextChapter returns true but the
+            // chapter was already loaded, the snapshot is identical and the
+            // content update is redundant, triggering an unnecessary adapter
+            // diff that can cause visible re-binding of pages.
+            val newPages = chaptersLoader.snapshot()
+            if (newPages != content.value.pages) {
+                content.value = ReaderContent(newPages, null)
+            }
         }
     }
 
