@@ -10,6 +10,7 @@ import org.koharu.miyo.core.model.getTitle
 import org.koharu.miyo.core.ui.image.FaviconDrawable
 import org.koharu.miyo.core.ui.list.OnListItemClickListener
 import org.koharu.miyo.core.util.ext.drawableStart
+import org.koharu.miyo.core.util.ext.setTooltipCompat
 import org.koharu.miyo.core.util.ext.getThemeDimensionPixelOffset
 import org.koharu.miyo.core.util.ext.setTextAndVisible
 import org.koharu.miyo.databinding.ItemEmptyHintBinding
