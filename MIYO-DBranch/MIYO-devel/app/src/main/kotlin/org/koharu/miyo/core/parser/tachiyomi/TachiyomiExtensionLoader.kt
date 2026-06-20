@@ -356,6 +356,7 @@ data class ExtensionLoadError(
  * 2. Extension-specific implementations are loaded from the APK
  * 3. Common library instances are shared (single OkHttp client, etc.)
  */
+@Suppress("DEPRECATION")
 class TachiyomiClassLoader(
         dexPath: String,
         optimizedDirectory: String?,

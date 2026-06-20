@@ -135,3 +135,37 @@ Stage Summary:
 - Webtoon scroll expansion bug fixed with 3 root causes addressed
 - Keiyoushi integration: 4 critical compile-blocking bugs fixed, 5 medium issues fixed, 2 low issues fixed
 - Remaining known gaps: JavaScriptEngine stub (JS-dependent extensions will crash), no Keiyoushi browse UI, no ConfigurableSource preference screen support
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Fix CI failure — compileDebugKotlin fails on devel branch after MIYO-DBranch merge
+
+Work Log:
+- Analyzed CI failure report: unit-test and lint jobs failed, build skipped
+- Root cause: MIYO-DBranch merge introduced Tachiyomi/Keiyoushi code that doesn't compile
+- Identified 5 categories of compilation errors:
+  1. Missing `import org.koharu.miyo.R` in DynamicParserManager.kt
+  2. Missing `import dalvik.system.DexClassLoader` in DynamicParserManager.kt
+  3. Invalid `companion object` inside `object DynamicParserManager` (Kotlin syntax error)
+  4. AAR dependency not resolving: `implementation files('libs/keiyoushi-extensions-lib.aar')` doesn't properly handle AAR files in Android
+  5. EmptyMangaSourceConfig implements wrong API: typed methods instead of generic `get(key: ConfigKey<T>): T`
+  6. fetchRelatedMangaList doesn't exist in bundled AAR's HttpSource
+
+Fixes Applied:
+
+1. **DynamicParserManager.kt** — Added `import org.koharu.miyo.R` and `import dalvik.system.DexClassLoader`
+2. **DynamicParserManager.kt** — Moved TAG constant from invalid `companion object` to object body level (companion objects are only valid inside classes, not top-level objects)
+3. **settings.gradle** — Added `flatDir { dirs 'app/libs' }` to dependencyResolutionManagement.repositories so the AGP can properly process the AAR
+4. **app/build.gradle** — Changed `implementation files('libs/keiyoushi-extensions-lib.aar')` to `implementation(name: 'keiyoushi-extensions-lib', ext: 'aar')` so the AGP recognizes it as an AAR and extracts classes.jar properly
+5. **TachiyomiSourceAdapter.kt** — Replaced EmptyMangaSourceConfig's 12 individual typed methods with single generic `override fun <T> get(key: ConfigKey<T>): T` matching SourceSettings' implementation pattern
+6. **TachiyomiSourceAdapter.kt** — Removed `httpSource.fetchRelatedMangaList()` call (method doesn't exist in AAR's HttpSource), replaced with `emptyList()` return
+7. **DynamicParserManager.kt** — Added `@Suppress("DEPRECATION")` on PluginClassLoader (DexClassLoader optimizedDirectory param is deprecated)
+8. **TachiyomiExtensionLoader.kt** — Added `@Suppress("DEPRECATION")` on TachiyomiClassLoader (same reason)
+
+Stage Summary:
+- All 5 categories of compilation errors fixed
+- AAR dependency resolution fixed via flatDir + name/ext syntax
+- MangaSourceConfig API mismatch resolved
+- Lint deprecation warnings suppressed for DexClassLoader usage
+- fetchRelatedMangaList gracefully handled (feature unavailable in bundled AAR version)

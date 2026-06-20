@@ -267,7 +267,7 @@ dependencies {
         kspAndroidTest libs.hilt.android.compiler
 
         // Keiyoushi / Tachiyomi extension support
-        implementation files('libs/keiyoushi-extensions-lib.aar')
+        implementation(name: 'keiyoushi-extensions-lib', ext: 'aar')
         implementation libs.rxjava
         implementation libs.injekt.core
         implementation libs.quickjs
