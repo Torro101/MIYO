@@ -2,6 +2,7 @@ package org.koharu.miyo.core.parser.tachiyomi
 
 import android.content.Context
 import android.content.pm.PackageManager
+import androidx.core.content.pm.PackageInfoCompat
 import android.util.Log
 import dalvik.system.DexClassLoader
 import eu.kanade.tachiyomi.source.Source
@@ -236,7 +237,7 @@ class TachiyomiExtensionLoader {
                                 className = className,
                                 isNsfw = isNsfw,
                                 versionName = info.versionName,
-                                versionCode = info.longVersionCode,
+                                versionCode = PackageInfoCompat.getLongVersionCode(info),
                         )
                 } catch (e: Exception) {
                         Log.w(TAG, "Failed to parse APK metadata for ${apkFile.name}: ${e.message}")
