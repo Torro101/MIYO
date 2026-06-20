@@ -4,14 +4,9 @@ import android.util.Log
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import okhttp3.Headers
 import okhttp3.Interceptor
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import org.koitharu.kotatsu.parsers.MangaLoaderContext
 import org.koitharu.kotatsu.parsers.MangaParser
 import org.koitharu.kotatsu.parsers.config.MangaSourceConfig
@@ -57,9 +52,8 @@ class TachiyomiSourceAdapter(
 	// we use MangaSourceRegistry to look up a matching source. For Tachiyomi
 	// sources, we return the first enum constant as a placeholder — the actual
 	// source identity is carried by mangaSource (KeiyoushiMangaSource).
-	override val source: org.koitharu.kotatsu.parsers.model.MangaParserSource
-		get() = org.koitharu.kotatsu.parsers.model.MangaParserSource.entries.firstOrNull()
-			?: throw IllegalStateException("No MangaParserSource entries available")
+	override val source: org.koitharu.kotatsu.parsers.model.MangaSource
+		get() = mangaSource
 
 	override val availableSortOrders: Set<SortOrder>
 		get() = if (httpSource.supportsLatest) setOf(SortOrder.POPULARITY, SortOrder.UPDATED)
@@ -71,8 +65,7 @@ class TachiyomiSourceAdapter(
 			isSearchWithFiltersSupported = true,
 		)
 
-	override val searchQueryCapabilities: org.koitharu.kotatsu.parsers.model.MangaSearchQueryCapabilities
-		get() = org.koitharu.kotatsu.parsers.model.MangaSearchQueryCapabilities()
+
 
 	override val config: MangaSourceConfig
 		get() = EmptyMangaSourceConfig
@@ -96,7 +89,8 @@ class TachiyomiSourceAdapter(
 			when {
 				filter.query != null -> {
 					// Search mode
-					searchManga(page, filter.query, httpSource.getFilterList())
+					val query = filter.query
+					searchManga(page, query, httpSource.getFilterList())
 				}
 				order == SortOrder.UPDATED && httpSource.supportsLatest -> {
 					// Latest updates
@@ -208,37 +202,21 @@ class TachiyomiSourceAdapter(
 	// ============================================================================
 
 	private suspend fun fetchPopular(page: Int): List<Manga> {
-		val request = httpSource.popularMangaRequest(page)
-		val response = executeRequest(request)
-		val mangasPage = httpSource.popularMangaParse(response)
+		val mangasPage = awaitObservable(httpSource.fetchPopularManga(page))
 		val (mangas, _) = mapper.toMangaList(mangasPage, mangaSource)
 		return mangas
 	}
 
 	private suspend fun fetchLatest(page: Int): List<Manga> {
-		val request = httpSource.latestUpdatesRequest(page)
-		val response = executeRequest(request)
-		val mangasPage = httpSource.latestUpdatesParse(response)
+		val mangasPage = awaitObservable(httpSource.fetchLatestUpdates(page))
 		val (mangas, _) = mapper.toMangaList(mangasPage, mangaSource)
 		return mangas
 	}
 
 	private suspend fun searchManga(page: Int, query: String, filters: FilterList): List<Manga> {
-		val request = httpSource.searchMangaRequest(page, query, filters)
-		val response = executeRequest(request)
-		val mangasPage = httpSource.searchMangaParse(response)
+		val mangasPage = awaitObservable(httpSource.fetchSearchManga(page, query, filters))
 		val (mangas, _) = mapper.toMangaList(mangasPage, mangaSource)
 		return mangas
-	}
-
-	/**
-	 * Executes an OkHttp Request using the source's client.
-	 * Uses withContext(Dispatchers.IO) to avoid blocking the calling coroutine.
-	 */
-	private suspend fun executeRequest(request: Request): okhttp3.Response {
-		return withContext(Dispatchers.IO) {
-			httpSource.client.newCall(request).execute()
-		}
 	}
 
 	/**
@@ -252,7 +230,7 @@ class TachiyomiSourceAdapter(
 					if (cont.isActive) cont.resume(result) {}
 				},
 				{ error ->
-					if (cont.isActive) cont.resumeWithException(error)
+					if (cont.isActive) cont.resumeWith(Result.failure(error))
 				},
 			)
 			cont.invokeOnCancellation { subscription.unsubscribe() }

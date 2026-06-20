@@ -22,10 +22,10 @@ object PluginErrorHandler {
         private const val MAX_ERRORS_PER_PLUGIN = 10
 
         /** All tracked errors, keyed by plugin file name. */
-        private val errors = ConcurrentHashMap<String, MutableList<PluginError>>()
+        @PublishedApi internal val errors = ConcurrentHashMap<String, MutableList<PluginError>>()
 
         /** Timestamp of last error for each plugin, used for deduplication. */
-        private val lastErrorTime = ConcurrentHashMap<String, Long>()
+        @PublishedApi internal val lastErrorTime = ConcurrentHashMap<String, Long>()
 
         /** Minimum interval between duplicate error reports (ms). */
         private const val DEDUP_INTERVAL_MS = 5000L

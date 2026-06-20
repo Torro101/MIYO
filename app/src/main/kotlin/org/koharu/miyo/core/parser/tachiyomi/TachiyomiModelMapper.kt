@@ -40,7 +40,7 @@ object TachiyomiModelMapper {
 			altTitles = emptySet(),
 			url = sManga.url,
 			publicUrl = sManga.url,
-			rating = Manga.RATING_UNKNOWN,
+			rating = -1f,
 			contentRating = mapContentRating(sManga),
 			coverUrl = sManga.thumbnail_url ?: "",
 			tags = parseGenres(sManga.genre, source),
@@ -169,6 +169,7 @@ object TachiyomiModelMapper {
 		MangaState.ABANDONED -> SManga.CANCELLED
 		MangaState.PAUSED -> SManga.ON_HIATUS
 		MangaState.UPCOMING -> SManga.ONGOING
+		MangaState.RESTRICTED -> SManga.ONGOING
 		null -> SManga.UNKNOWN
 	}
 

@@ -131,7 +131,7 @@ fun MangaSource.getSummary(context: Context): String? {
                 this is ExternalMangaSource -> context.getString(R.string.external_source)
                 this is KeiyoushiMangaSource -> {
                         val type = context.getString(R.string.extension_type_keiyoushi)
-                        val loc = locale.toLocaleOrNull()?.getDisplayLanguage(Locale.getDefault()) ?: context.getString(R.string.other)
+                        val loc = locale.toLocaleOrNull()?.getDisplayLanguage(Locale.getDefault()) ?: context.getString(R.string.content_type_other)
                         "$type • $loc"
                 }
                 this === LocalMangaSource || this === TestMangaSource || this === UnknownMangaSource -> null
