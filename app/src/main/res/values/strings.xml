@@ -992,8 +992,7 @@
         <string name="keiyoushi_update_available">Update available</string>
         <string name="keiyoushi_no_extensions_found">No extensions found</string>
         <string name="extension_load_error">Extension failed to load: %1$s</string>
-        <string name="extension_type_keiyoushi">Keiyoushi</string>
-        <string name="extension_type_kotatsu">Kotatsu</string>
+            <string name="extension_type_kotatsu">Kotatsu</string>
         <string name="plugin_error_handler_title">Plugin errors</string>
         <string name="plugin_error_summary">%1$d plugin(s) with errors</string>
 
