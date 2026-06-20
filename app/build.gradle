@@ -231,6 +231,9 @@ dependencies {
 	implementation libs.androidx.hilt.work
 	ksp libs.androidx.hilt.compiler
 
+	// Kotatsu parsers KSP processor (generates MangaParserSource enum)
+	ksp libs.kotatsu.parsers.ksp
+
 	implementation libs.coil.core
 	implementation libs.coil.network
 	implementation libs.coil.gif
