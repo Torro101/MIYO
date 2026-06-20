@@ -189,17 +189,9 @@ class TachiyomiSourceAdapter(
 	}
 
 	override suspend fun getRelatedManga(seed: Manga): List<Manga> {
-		return try {
-			val sManga = mapper.toSManga(seed)
-			// fetchRelatedMangaList is a suspend function, not an Observable
-			val related = httpSource.fetchRelatedMangaList(sManga)
-			related.map { mapper.toManga(it, mangaSource) }
-		} catch (_: UnsupportedOperationException) {
-			emptyList()
-		} catch (e: Exception) {
-			Log.w(TAG, "Error fetching related manga for ${seed.title}", e)
-			emptyList()
-		}
+		// fetchRelatedMangaList is not available in the bundled AAR version of HttpSource.
+		// Return empty list — related manga is not supported via Tachiyomi extensions.
+		return emptyList()
 	}
 
 	override fun getRequestHeaders(): Headers {
@@ -339,16 +331,15 @@ class ExtensionExecutionException(
  * Empty config implementation — Tachiyomi extensions don't use Kotatsu's config system.
  */
 private object EmptyMangaSourceConfig : MangaSourceConfig {
-	override fun getBoolean(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Boolean>): Boolean = false
-	override fun getFloat(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Float>): Float = 0f
-	override fun getInt(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Int>): Int = 0
-	override fun getLong(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Long>): Long = 0L
-	override fun getString(key: org.koitharu.kotatsu.parsers.config.ConfigKey<String>): String = ""
-	override fun <T : Enum<T>> getEnum(key: org.koitharu.kotatsu.parsers.config.ConfigKey<T>): T? = null
-	override fun setBoolean(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Boolean>, value: Boolean) {}
-	override fun setFloat(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Float>, value: Float) {}
-	override fun setInt(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Int>, value: Int) {}
-	override fun setLong(key: org.koitharu.kotatsu.parsers.config.ConfigKey<Long>, value: Long) {}
-	override fun setString(key: org.koitharu.kotatsu.parsers.config.ConfigKey<String>, value: String) {}
-	override fun <T : Enum<T>> setEnum(key: org.koitharu.kotatsu.parsers.config.ConfigKey<T>, value: T) {}
+	@Suppress("UNCHECKED_CAST")
+	override fun <T> get(key: org.koitharu.kotatsu.parsers.config.ConfigKey<T>): T {
+		return when (key) {
+			is org.koitharu.kotatsu.parsers.config.ConfigKey.Domain -> key.defaultValue
+			is org.koitharu.kotatsu.parsers.config.ConfigKey.UserAgent -> key.defaultValue
+			is org.koitharu.kotatsu.parsers.config.ConfigKey.ShowSuspiciousContent -> key.defaultValue
+			is org.koitharu.kotatsu.parsers.config.ConfigKey.SplitByTranslations -> key.defaultValue
+			is org.koitharu.kotatsu.parsers.config.ConfigKey.PreferredImageServer -> key.defaultValue
+			else -> null
+		} as T
+	}
 }
