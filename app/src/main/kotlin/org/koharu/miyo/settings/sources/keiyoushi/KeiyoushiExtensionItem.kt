@@ -15,11 +15,7 @@ sealed interface KeiyoushiExtensionItem : ListModel {
 		override fun areItemsTheSame(other: ListModel): Boolean =
 			other is Available && extension.pkg == other.extension.pkg
 
-		override fun areContentsTheSame(other: ListModel): Boolean =
-			other is Available && extension == other.extension &&
-				isInstalled == other.isInstalled &&
-				hasUpdate == other.hasUpdate &&
-				isInstalling == other.isInstalling
+
 	}
 
 	data class RepoHeader(

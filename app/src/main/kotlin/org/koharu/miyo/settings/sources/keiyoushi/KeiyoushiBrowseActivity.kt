@@ -41,7 +41,7 @@ class KeiyoushiBrowseActivity : BaseActivity<ActivityKeiyoushiBrowseBinding>(),
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(ActivityKeiyoushiBrowseBinding.inflate(layoutInflater))
-		setDisplayHomeAsUp(isEnabled = true)
+		setDisplayHomeAsUp(isEnabled = true, showUpAsClose = false)
 
 		val adapter = KeiyoushiBrowseAdapter(
 			onInstallClick = { item -> viewModel.installExtension(item.extension) },
