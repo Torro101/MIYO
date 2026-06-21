@@ -41,6 +41,7 @@ object TachiyomiInjektInitializer {
 	private const val INJEKT_CLASS = "uy.kohesive.injekt.InjektKt"
 	private const val INJEKT_SCOPE_CLASS = "uy.kohesive.injekt.api.InjektRegistrar"
 	private const val NETWORK_HELPER_CLASS = "eu.kanade.tachiyomi.network.NetworkHelper"
+	private const val NETWORK_PREFERENCES_CLASS = "eu.kanade.tachiyomi.network.NetworkPreferences"
 	private const val JSON_CLASS = "kotlinx.serialization.json.Json"
 
 	@Volatile
@@ -59,6 +60,7 @@ object TachiyomiInjektInitializer {
 		try {
 			registerApplication(app)
 			registerJson()
+			registerNetworkPreferences(context)
 			registerNetworkHelper(context, mangaHttpClient)
 			seeded = true
 			Log.i(TAG, "Injekt graph seeded for Tachiyomi extensions")
@@ -89,6 +91,39 @@ object TachiyomiInjektInitializer {
 		addSingleton(jsonInstance, jsonInstance.javaClass)
 		// Also register under the declared Json type so injectLazy<Json>() resolves.
 		runtimeRegisterUnderType(jsonInstance, JSON_CLASS)
+	}
+
+	/**
+	 * Register Tachiyomi's NetworkPreferences if present in the AAR.
+	 *
+	 * Some NetworkHelper variants require a NetworkPreferences to be resolvable via Injekt
+	 * (e.g. for DoH / user-agent settings). Construction is fully guarded: if the class is
+	 * absent or no compatible constructor exists, we skip it. Probes common shapes:
+	 *   - NetworkPreferences(PreferenceStore) / NetworkPreferences(SharedPreferences)
+	 *   - NetworkPreferences(Context)
+	 *   - NetworkPreferences()
+	 */
+	private fun registerNetworkPreferences(context: Context) {
+		val prefsClass = runCatching { Class.forName(NETWORK_PREFERENCES_CLASS) }.getOrNull() ?: return
+		val instance: Any? = run {
+			prefsClass.constructors
+				.sortedBy { it.parameterTypes.size }
+				.firstNotNullOfOrNull { ctor ->
+					val args: Array<Any?>? = when {
+						ctor.parameterTypes.isEmpty() -> emptyArray()
+						ctor.parameterTypes.size == 1 &&
+							ctor.parameterTypes[0].isAssignableFrom(context.javaClass) -> arrayOf<Any?>(context)
+						else -> null
+					}
+					if (args == null) null
+					else runCatching { ctor.newInstance(*args) }.getOrNull()
+				}
+		}
+		if (instance == null) {
+			Log.w(TAG, "Could not construct NetworkPreferences; skipping (most sources don't need it)")
+			return
+		}
+		addSingleton(instance, prefsClass)
 	}
 
 	/**
