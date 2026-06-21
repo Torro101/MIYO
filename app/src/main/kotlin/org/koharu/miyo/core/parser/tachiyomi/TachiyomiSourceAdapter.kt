@@ -91,20 +91,19 @@ class TachiyomiSourceAdapter(
 	override suspend fun getList(offset: Int, order: SortOrder, filter: MangaListFilter): List<Manga> {
 		return try {
 			val page = (offset / ITEMS_PER_PAGE) + 1
+			val query = filter.query?.takeIf { it.isNotBlank() }
+			// Kotatsu tag keys do not map 1:1 onto a Tachiyomi source's extension-specific
+			// FilterList, so genre filtering cannot be applied generically. As a best-effort
+			// fallback, when the user selected tags but typed no query, search by the first
+			// tag's title (most Tachiyomi sources treat that as a text search).
+			val tagQuery = filter.tags.firstOrNull()?.title?.takeIf { it.isNotBlank() }
 			when {
-				filter.query != null -> {
-					// Search mode
-					val query = filter.query ?: ""
-					searchManga(page, query, httpSource.getFilterList())
-				}
-				order == SortOrder.UPDATED && httpSource.supportsLatest -> {
-					// Latest updates
-					fetchLatest(page)
-				}
-				else -> {
-					// Popular / default
-					fetchPopular(page)
-				}
+				query != null -> searchManga(page, query, httpSource.getFilterList())
+				order == SortOrder.RELEVANCE && tagQuery != null ->
+					searchManga(page, tagQuery, httpSource.getFilterList())
+				tagQuery != null -> searchManga(page, tagQuery, httpSource.getFilterList())
+				order == SortOrder.UPDATED && httpSource.supportsLatest -> fetchLatest(page)
+				else -> fetchPopular(page)
 			}
 		} catch (e: Exception) {
 			Log.e(TAG, "Error in getList for $sourceName", e)
