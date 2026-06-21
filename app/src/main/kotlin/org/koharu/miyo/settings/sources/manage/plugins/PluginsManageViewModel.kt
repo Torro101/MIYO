@@ -18,7 +18,6 @@ import okhttp3.Request
 import org.koharu.miyo.R
 import org.koharu.miyo.core.db.MangaDatabase
 import org.koharu.miyo.core.model.PluginSourceKeyNormalizer
-import org.koharu.miyo.core.network.BaseHttpClient
 import org.koharu.miyo.core.network.MangaHttpClient
 import org.koharu.miyo.core.parser.DynamicParserManager
 import org.koharu.miyo.core.parser.PluginFileLoader
