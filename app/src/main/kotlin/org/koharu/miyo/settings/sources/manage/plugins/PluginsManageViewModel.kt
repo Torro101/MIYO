@@ -89,13 +89,16 @@ class PluginsManageViewModel @Inject constructor(
 	}
 
 	/**
-	 * Detect if the input is a Keiyoushi extension index URL.
-	 * These URLs end with `index.min.json` or `index.json`.
+	 * Detect if the input is a Keiyoushi extension repository URL.
+	 * Accepts the JSON index (`index.min.json` / `index.json`) and the Mihon-style
+	 * repository descriptor (`repo.json`), which is resolved to its index when fetched.
 	 */
 	fun isKeiyoushiIndexUrl(input: String): Boolean {
 		val trimmed = input.trim().removeSuffix("/")
 		return (trimmed.startsWith("http://") || trimmed.startsWith("https://")) &&
-			(trimmed.endsWith("index.min.json") || trimmed.endsWith("index.json"))
+			(trimmed.endsWith("index.min.json") ||
+				trimmed.endsWith("index.json") ||
+				trimmed.endsWith("repo.json"))
 	}
 
 	/**
