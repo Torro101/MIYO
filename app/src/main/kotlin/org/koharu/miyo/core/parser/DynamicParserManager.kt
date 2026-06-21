@@ -169,7 +169,11 @@ object DynamicParserManager {
                                                         sourceName = source.name,
                                                         apkFileName = ext.fileName,
                                                 )
-                                                val keiSource = adapter.source as? KeiyoushiMangaSource ?: continue
+                                                // NOTE: adapter.source is the MangaParserSource
+                                                // placeholder enum and is never a
+                                                // KeiyoushiMangaSource. The real source identity
+                                                // is carried by adapter.mangaSource.
+                                                val keiSource = adapter.mangaSource
                                                 MangaSourceRegistry.sources.add(keiSource)
                                                 tachiyomiAdapters[keiSource.name] = adapter
                                                 PluginErrorHandler.clearErrors(ext.fileName)
