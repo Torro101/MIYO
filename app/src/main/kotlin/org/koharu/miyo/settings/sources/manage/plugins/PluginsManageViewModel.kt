@@ -19,8 +19,10 @@ import org.koharu.miyo.R
 import org.koharu.miyo.core.db.MangaDatabase
 import org.koharu.miyo.core.model.PluginSourceKeyNormalizer
 import org.koharu.miyo.core.network.BaseHttpClient
+import org.koharu.miyo.core.network.MangaHttpClient
 import org.koharu.miyo.core.parser.DynamicParserManager
 import org.koharu.miyo.core.parser.PluginFileLoader
+import org.koharu.miyo.core.parser.tachiyomi.KeiyoushiExtension
 import org.koharu.miyo.core.parser.tachiyomi.KeiyoushiRepositoryManager
 import org.koharu.miyo.core.ui.BaseViewModel
 import org.koharu.miyo.filter.data.SavedFiltersRepository
@@ -36,7 +38,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PluginsManageViewModel @Inject constructor(
 	@param:ApplicationContext private val context: Context,
-	@param:BaseHttpClient private val okHttpClient: OkHttpClient,
+	@param:MangaHttpClient private val okHttpClient: OkHttpClient,
 	private val database: MangaDatabase,
 	private val savedFiltersRepository: SavedFiltersRepository,
 ) : BaseViewModel() {
@@ -98,51 +100,58 @@ class PluginsManageViewModel @Inject constructor(
 	}
 
 	/**
-	 * Import all extensions from a Keiyoushi repository index URL.
-	 * Fetches the index, then downloads and installs each extension APK.
-	 * Returns the count of successfully installed extensions, or -1 on failure.
+	 * Register a Keiyoushi repository index URL and fetch the list of AVAILABLE
+	 * extensions WITHOUT installing them.
+	 *
+	 * IMPORTANT: A Keiyoushi index typically lists ~900+ extensions. The previous
+	 * implementation downloaded and installed every single one on paste, which would
+	 * take hours, consume hundreds of MB, overwhelm the DexClassLoader and likely OOM.
+	 * Instead we register the repo and return the available extensions so the user can
+	 * pick individual ones (see [installSingleExtension]).
+	 *
+	 * @return the list of available extensions, or null on failure.
 	 */
-	suspend fun importFromKeiyoushiRepo(indexUrl: String): Int = withContext(Dispatchers.IO) {
+	suspend fun registerKeiyoushiRepo(indexUrl: String): List<KeiyoushiExtension>? = withContext(Dispatchers.IO) {
 		try {
 			val trimmed = indexUrl.trim().removeSuffix("/")
 			val baseUrl = repoManager.deriveBaseUrl(trimmed)
-
-			// Fetch the index
 			val extensions = repoManager.fetchIndex(trimmed)
 			if (extensions.isNullOrEmpty()) {
 				Log.w(TAG, "No extensions found in Keiyoushi repo: $trimmed")
-				return@withContext -1
+				return@withContext null
 			}
-
-			Log.i(TAG, "Found ${extensions.size} extensions in Keiyoushi repo, installing...")
-
-			// Install each extension
-			var installed = 0
-			for (ext in extensions) {
-				val extWithBaseUrl = ext.withBaseUrl(baseUrl)
-				val result = repoManager.installExtension(extWithBaseUrl)
-				if (result != null) {
-					installed++
-					Log.i(TAG, "Installed Keiyoushi extension: ${ext.displayName}")
-				} else {
-					Log.w(TAG, "Failed to install Keiyoushi extension: ${ext.displayName}")
-				}
-			}
-
-			// Save the repo URL so it is remembered
+			// Persist the repo so it is remembered for browsing/updates.
 			repoManager.addRepoUrl(trimmed)
+			Log.i(TAG, "Registered Keiyoushi repo with ${extensions.size} available extensions")
+			extensions.map { it.withBaseUrl(baseUrl) }
+		} catch (e: Exception) {
+			Log.e(TAG, "Failed to register Keiyoushi repo: $indexUrl", e)
+			null
+		}
+	}
 
-			// Reload all parsers so installed extensions are available
+	/**
+	 * Install a SINGLE Keiyoushi extension (the [KeiyoushiExtension] must already carry
+	 * its baseUrl, e.g. as returned by [registerKeiyoushiRepo]). Reloads parsers on success.
+	 *
+	 * @return true if the extension installed successfully.
+	 */
+	suspend fun installSingleExtension(extension: KeiyoushiExtension): Boolean = withContext(Dispatchers.IO) {
+		try {
+			val result = repoManager.installExtension(extension)
+			if (result == null) {
+				Log.w(TAG, "Failed to install Keiyoushi extension: ${extension.displayName}")
+				return@withContext false
+			}
 			DynamicParserManager.loadParsersFromDirectory(context, PluginFileLoader.pluginsDir(context))
 			PluginSourceKeyNormalizer.normalize(database, savedFiltersRepository)
-
-			Log.i(TAG, "Keiyoushi repo import complete: $installed/${extensions.size} extensions installed")
-			installed
+			Log.i(TAG, "Installed Keiyoushi extension: ${extension.displayName}")
+			true
 		} catch (e: Exception) {
-			Log.e(TAG, "Failed to import from Keiyoushi repo: $indexUrl", e)
-			-1
+			Log.e(TAG, "Failed to install Keiyoushi extension: ${extension.displayName}", e)
+			false
 		}
-	}.also { if (it > 0) refresh() }
+	}.also { if (it) refresh() }
 
 	suspend fun resolveGithubRelease(input: String): ExternalPluginDto? = withContext(Dispatchers.Default) {
 		val repository = normalizeRepository(input) ?: return@withContext null
@@ -209,9 +218,11 @@ class PluginsManageViewModel @Inject constructor(
 
 			// Check if this is a Keiyoushi extension index URL
 			if (isKeiyoushiIndexUrl(input)) {
-				val count = importFromKeiyoushiRepo(input)
+				// Do NOT bulk-install ~900 extensions. Register the repo and report how many
+				// are available; individual installation happens via installSingleExtension().
+				val available = registerKeiyoushiRepo(input)
 				withContext(Dispatchers.Main) {
-					onResult(count > 0)
+					onResult(!available.isNullOrEmpty())
 				}
 				return@launchJob
 			}
