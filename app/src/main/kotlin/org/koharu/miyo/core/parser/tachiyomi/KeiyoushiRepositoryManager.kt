@@ -13,7 +13,6 @@ import org.koharu.miyo.core.parser.PluginFileLoader
 import org.koitharu.kotatsu.parsers.util.await
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Manages the Keiyoushi extension repository — downloading the index,
