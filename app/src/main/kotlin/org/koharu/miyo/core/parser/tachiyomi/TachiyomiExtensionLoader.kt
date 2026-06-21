@@ -10,6 +10,7 @@ import eu.kanade.tachiyomi.source.SourceFactory
 import eu.kanade.tachiyomi.source.online.HttpSource
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_CLASS
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_EXTENSION
+import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_FACTORY
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_NSFW
 import java.io.File
 import java.lang.reflect.Constructor
@@ -108,6 +109,27 @@ class TachiyomiExtensionLoader {
                                 classLoader = TachiyomiClassLoader(apkFile.absolutePath, cacheDir, null, parentCl),
                                 isNsfw = false,
                                 error = ExtensionLoadError(apkFile.name, "Not a valid Tachiyomi extension APK (missing metadata)", null),
+                        )
+                }
+
+                // Step 1b: Validate the extension library version. Tachiyomi/Keiyoushi
+                // extensions are versioned as <libVersion>.<patch> where libVersion is
+                // the extensions-lib major.minor. We only support 1.4 and 1.6; other
+                // lines (1.3, 1.5, 1.7, ...) use incompatible APIs and crash at runtime.
+                if (!isSupportedLibVersion(meta.versionName)) {
+                        Log.w(TAG, "Unsupported extension lib version '${meta.versionName}' for ${apkFile.name}")
+                        return TachiyomiExtensionInfo(
+                                fileName = apkFile.name,
+                                packageName = meta.packageName,
+                                className = "",
+                                sources = emptyList(),
+                                classLoader = TachiyomiClassLoader(apkFile.absolutePath, cacheDir, null, parentCl),
+                                isNsfw = meta.isNsfw,
+                                error = ExtensionLoadError(
+                                        apkFile.name,
+                                        "Unsupported extension library version (${meta.versionName ?: "unknown"}); requires 1.4 or 1.6",
+                                        null,
+                                ),
                         )
                 }
 
@@ -227,14 +249,19 @@ class TachiyomiExtensionLoader {
                                 return null
                         }
 
+                        // An extension declares EITHER a single entry class
+                        // (tachiyomi.extension.class) OR a SourceFactory class
+                        // (tachiyomi.extension.factory). Some declare both; some
+                        // multi-source extensions only declare the factory. Read both.
                         val className = metaData.getString(META_DATA_CLASS)
-                                ?: return null
+                        val factoryName = metaData.getString(META_DATA_FACTORY)
+                        val entryClass = className ?: factoryName ?: return null
 
                         val isNsfw = metaData.containsKey(META_DATA_NSFW)
 
                         ApkMetadata(
                                 packageName = info.packageName,
-                                className = className,
+                                className = entryClass,
                                 isNsfw = isNsfw,
                                 versionName = info.versionName,
                                 versionCode = PackageInfoCompat.getLongVersionCode(info),
@@ -293,6 +320,19 @@ class TachiyomiExtensionLoader {
                 return ctor.newInstance(*args)
         }
 
+        /**
+         * Whether the extension's declared library version is supported.
+         *
+         * Mirrors Mihon/Tachiyomi: only the 1.4 and 1.6 extension-lib lines expose the
+         * API surface the bundled keiyoushi-extensions-lib provides. A null/blank version
+         * is treated as unsupported to avoid loading APKs we cannot reason about.
+         */
+        private fun isSupportedLibVersion(versionName: String?): Boolean {
+                val v = versionName?.trim().orEmpty()
+                if (v.isEmpty()) return false
+                return v.startsWith("1.4") || v.startsWith("1.6")
+        }
+
         companion object {
                 private const val TAG = "TachiyomiExtLoader"
         }
@@ -334,6 +374,7 @@ data class TachiyomiExtensionInfo(
         companion object {
                 const val META_DATA_EXTENSION = "tachiyomi.extension"
                 const val META_DATA_CLASS = "tachiyomi.extension.class"
+                const val META_DATA_FACTORY = "tachiyomi.extension.factory"
                 const val META_DATA_NSFW = "tachiyomi.extension.nsfw"
         }
 }

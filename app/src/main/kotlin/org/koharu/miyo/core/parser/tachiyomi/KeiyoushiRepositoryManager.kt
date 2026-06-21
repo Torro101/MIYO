@@ -10,9 +10,9 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koharu.miyo.core.parser.PluginFileLoader
+import org.koitharu.kotatsu.parsers.util.await
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 /**
  * Manages the Keiyoushi extension repository — downloading the index,
@@ -85,11 +85,18 @@ class KeiyoushiRepositoryManager(
 
 	/**
 	 * Check if a URL looks like a valid Tachiyomi extension repo index URL.
+	 *
+	 * Accepts the legacy JSON index (`index.min.json` / `index.json`) as well as a
+	 * repository descriptor (`repo.json`), which we resolve to its JSON index via
+	 * [resolveIndexUrl]. Protobuf-only indexes (`index.pb`) are not accepted because
+	 * the app cannot parse protobuf without the schema.
 	 */
 	fun isValidIndexUrl(url: String): Boolean {
-		val trimmed = url.trim()
+		val trimmed = url.trim().removeSuffix("/")
 		if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) return false
-		return trimmed.endsWith("index.min.json") || trimmed.endsWith("index.json")
+		return trimmed.endsWith("index.min.json") ||
+			trimmed.endsWith("index.json") ||
+			trimmed.endsWith("repo.json")
 	}
 
 	/**
@@ -101,7 +108,46 @@ class KeiyoushiRepositoryManager(
 		return when {
 			trimmed.endsWith("index.min.json") -> trimmed.removeSuffix("index.min.json")
 			trimmed.endsWith("index.json") -> trimmed.removeSuffix("index.json")
+			trimmed.endsWith("repo.json") -> trimmed.removeSuffix("repo.json")
 			else -> trimmed.removeSuffix("/") + "/"
+		}
+	}
+
+	/**
+	 * Resolve a user-supplied URL to a concrete JSON index URL.
+	 *
+	 * - `repo.json` is a repository descriptor that may contain `index` / `index_v2`
+	 *   pointers (Mihon-style). We follow `index`/`index_v2` when it points at a JSON
+	 *   variant; protobuf (`*.pb`) targets are rejected (no schema to parse).
+	 * - JSON index URLs are returned unchanged.
+	 *
+	 * @return a JSON index URL, or null if it cannot be resolved to a parseable index.
+	 */
+	private suspend fun resolveIndexUrl(url: String): String? {
+		val trimmed = url.trim().removeSuffix("/")
+		if (!trimmed.endsWith("repo.json")) return trimmed
+		return withContext(Dispatchers.IO) {
+			try {
+				val request = Request.Builder()
+					.url(trimmed)
+					.header("User-Agent", "MIYO-App")
+					.build()
+				val response = httpClient.newCall(request).await()
+				if (!response.isSuccessful) return@withContext null
+				val body = response.body?.string() ?: return@withContext null
+				val descriptor = json.decodeFromString<KeiyoushiRepoDescriptor>(body)
+				val base = deriveBaseUrl(trimmed)
+				// Prefer an explicit JSON index pointer; fall back to the conventional file.
+				val candidate = listOf(descriptor.index, descriptor.indexV2)
+					.firstOrNull { !it.isNullOrBlank() && !it.endsWith(".pb") }
+				when {
+					candidate != null -> if (candidate.startsWith("http")) candidate else base + candidate.removePrefix("/")
+					else -> base + "index.min.json"
+				}
+			} catch (e: Exception) {
+				Log.w(TAG, "Could not resolve repo.json at $trimmed: ${e.message}")
+				null
+			}
 		}
 	}
 
@@ -116,30 +162,33 @@ class KeiyoushiRepositoryManager(
 	suspend fun fetchIndex(repoUrl: String = DEFAULT_INDEX_URL): List<KeiyoushiExtension>? =
 		withContext(Dispatchers.IO) {
 			try {
+				// Resolve repo.json descriptors to a concrete JSON index URL.
+				val indexUrl = resolveIndexUrl(repoUrl.trim()) ?: run {
+					Log.w(TAG, "Could not resolve a JSON index URL from $repoUrl")
+					return@withContext null
+				}
 				val request = Request.Builder()
-					.url(repoUrl.trim())
+					.url(indexUrl)
 					.header("User-Agent", "MIYO-App")
 					.build()
 
-				val response = httpClient.newBuilder()
-					.connectTimeout(15, TimeUnit.SECONDS)
-					.readTimeout(30, TimeUnit.SECONDS)
-					.build()
-					.newCall(request)
-					.execute()
+				// Use the shared host client directly so CloudFlare/cookie/DoH/GZip
+				// interceptors are applied. Rebuilding the client (newBuilder().build())
+				// would drop every interceptor and break repos behind CloudFlare.
+				val response = httpClient.newCall(request).await()
 
 				if (!response.isSuccessful) {
-					Log.w(TAG, "Failed to fetch index from $repoUrl: HTTP ${response.code}")
+					Log.w(TAG, "Failed to fetch index from $indexUrl: HTTP ${response.code}")
 					return@withContext null
 				}
 
 				val body = response.body?.string() ?: return@withContext null
 				val extensions = json.decodeFromString<List<KeiyoushiExtension>>(body)
 
-				// Cache the index with the repo URL as key
+				// Cache the index with the original repo URL as key
 				prefs.edit().putString(cacheKeyFor(repoUrl), body).apply()
 
-				Log.i(TAG, "Fetched Keiyoushi index from $repoUrl: ${extensions.size} extensions")
+				Log.i(TAG, "Fetched Keiyoushi index from $indexUrl: ${extensions.size} extensions")
 				extensions
 			} catch (e: Exception) {
 				Log.e(TAG, "Failed to fetch Keiyoushi index from $repoUrl", e)
@@ -210,12 +259,8 @@ class KeiyoushiRepositoryManager(
 					.header("User-Agent", "MIYO-App")
 					.build()
 
-				val response = httpClient.newBuilder()
-					.connectTimeout(15, TimeUnit.SECONDS)
-					.readTimeout(60, TimeUnit.SECONDS)
-					.build()
-					.newCall(request)
-					.execute()
+				// Use the shared host client (with all interceptors) and a non-blocking await().
+				val response = httpClient.newCall(request).await()
 
 				if (!response.isSuccessful) {
 					Log.w(TAG, "Failed to download APK: HTTP ${response.code}")
@@ -420,6 +465,17 @@ data class KeiyoushiSource(
 	val name: String = "",
 	val lang: String = "all",
 	val baseUrl: String = "",
+)
+
+/**
+ * Mihon-style repository descriptor (`repo.json`). Only the fields needed to locate
+ * the JSON index are modelled; unknown keys are ignored.
+ */
+@Serializable
+data class KeiyoushiRepoDescriptor(
+	val index: String? = null,
+	@kotlinx.serialization.SerialName("index_v2")
+	val indexV2: String? = null,
 )
 
 /** Metadata for an installed extension, used for update checking. */
