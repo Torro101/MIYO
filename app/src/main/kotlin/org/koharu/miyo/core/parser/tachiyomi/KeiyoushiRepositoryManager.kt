@@ -10,6 +10,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koharu.miyo.core.parser.PluginFileLoader
+import org.koitharu.kotatsu.parsers.util.await
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -121,12 +122,10 @@ class KeiyoushiRepositoryManager(
 					.header("User-Agent", "MIYO-App")
 					.build()
 
-				val response = httpClient.newBuilder()
-					.connectTimeout(15, TimeUnit.SECONDS)
-					.readTimeout(30, TimeUnit.SECONDS)
-					.build()
-					.newCall(request)
-					.execute()
+				// Use the shared host client directly so CloudFlare/cookie/DoH/GZip
+				// interceptors are applied. Rebuilding the client (newBuilder().build())
+				// would drop every interceptor and break repos behind CloudFlare.
+				val response = httpClient.newCall(request).await()
 
 				if (!response.isSuccessful) {
 					Log.w(TAG, "Failed to fetch index from $repoUrl: HTTP ${response.code}")
@@ -210,12 +209,8 @@ class KeiyoushiRepositoryManager(
 					.header("User-Agent", "MIYO-App")
 					.build()
 
-				val response = httpClient.newBuilder()
-					.connectTimeout(15, TimeUnit.SECONDS)
-					.readTimeout(60, TimeUnit.SECONDS)
-					.build()
-					.newCall(request)
-					.execute()
+				// Use the shared host client (with all interceptors) and a non-blocking await().
+				val response = httpClient.newCall(request).await()
 
 				if (!response.isSuccessful) {
 					Log.w(TAG, "Failed to download APK: HTTP ${response.code}")
