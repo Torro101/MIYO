@@ -10,6 +10,7 @@ import eu.kanade.tachiyomi.source.SourceFactory
 import eu.kanade.tachiyomi.source.online.HttpSource
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_CLASS
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_EXTENSION
+import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_FACTORY
 import org.koharu.miyo.core.parser.tachiyomi.TachiyomiExtensionInfo.Companion.META_DATA_NSFW
 import java.io.File
 import java.lang.reflect.Constructor
