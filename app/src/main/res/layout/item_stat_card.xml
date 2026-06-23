@@ -2,14 +2,7 @@
 <!--
   ~ MIYO UI/UX Redesign - Stat info card (single stat)
   ~ Used in Details screen for chapters/size/language stats.
-  ~
-  ~ Layout:
-  ~ +-------------------------+
-  ~ | [icon]                  |
-  ~ |                         |
-  ~ |  48          English    |
-  ~ |  Chapters    Language   |
-  ~ +-------------------------+
+  ~ Vertical layout: icon (24dp) above value (headline small) above label (label small).
 -->
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"

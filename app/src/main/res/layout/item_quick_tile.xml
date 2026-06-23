@@ -1,16 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ MIYO UI/UX Redesign - Quick action tile (for home screen 2x2 quick access)
-  ~ Used in a GridLayout with 2 columns for Local storage / Bookmarks / Random / Downloads
-  ~
-  ~ Layout:
-  ~ +---------------+
-  ~ |               |
-  ~ |     [icon]    |
-  ~ |               |
-  ~ |   Local       |
-  ~ |   storage     |
-  ~ +---------------+
+  ~ Used in a GridLayout with 2 columns for Local storage / Bookmarks / Random / Downloads.
+  ~ Vertical layout: icon (28dp) above title (label medium).
 -->
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
