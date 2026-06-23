@@ -112,11 +112,6 @@
                 <item name="android:paddingTop">14dp</item>
         </style>
 
-        <!-- Segmented button container (Material3 segmented button) -->
-        <style name="Widget.Miyo.SegmentedButton" parent="Widget.Material3.SegmentedButton">
-                <item name="shapeAppearance">?attr/shapeAppearanceCornerFull</item>
-        </style>
-
         <!-- Filter chip - refined with brand tint when checked -->
         <style name="Widget.Miyo.Chip.Filter.Brand" parent="Widget.Material3.Chip.Filter">
                 <item name="android:minHeight">@dimen/miyo_filter_chip_height</item>
