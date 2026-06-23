@@ -18,7 +18,8 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingHorizontal="@dimen/miyo_space_xxl"
+        android:paddingStart="@dimen/miyo_space_xxl"
+        android:paddingEnd="@dimen/miyo_space_xxl"
         android:paddingBottom="?actionBarSize">
 
     <FrameLayout

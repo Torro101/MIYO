@@ -19,8 +19,10 @@
         android:gravity="center_vertical"
         android:minHeight="56dp"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/miyo_space_s"
-        android:paddingVertical="@dimen/miyo_space_xs">
+        android:paddingStart="@dimen/miyo_space_s"
+        android:paddingEnd="@dimen/miyo_space_s"
+        android:paddingTop="@dimen/miyo_space_xs"
+        android:paddingBottom="@dimen/miyo_space_xs">
 
     <org.koharu.miyo.image.ui.CoverImageView
             android:id="@+id/imageView_cover"

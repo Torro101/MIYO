@@ -153,7 +153,8 @@
                 <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
                 <item name="iconSize">22dp</item>
                 <item name="iconTint">?attr/colorOnPrimary</item>
-                <item name="android:paddingHorizontal">24dp</item>
+                <item name="android:paddingStart">24dp</item>
+                <item name="android:paddingEnd">24dp</item>
         </style>
 
         <!-- Pill-shaped tonal button -->

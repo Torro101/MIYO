@@ -14,7 +14,8 @@
         android:background="@drawable/bg_section_header"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/miyo_space_s"
+        android:paddingStart="@dimen/miyo_space_s"
+        android:paddingEnd="@dimen/miyo_space_s"
         android:layout_marginVertical="@dimen/miyo_space_s"
         android:layout_marginHorizontal="@dimen/miyo_space_s">
 
