@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Refined manga grid item (v2)
+  ~ New layout alongside item_manga_grid.xml. Existing adapters that bind
+  ~ item_manga_grid will continue to use the original. New adapters/screens
+  ~ can opt into this v2 layout for the refined design.
+  ~
+  ~ Refinements vs v1:
+  ~  - 16dp corner cover (vs 12dp) for softer, modern look
+  ~  - Tighter cover-to-title spacing (4dp)
+  ~  - Title uses M3 TitleSmall with 2-line max
+  ~  - State list animator for subtle press feedback
+  ~  - Refined badge offset
+  ~  - ReadingProgressView repositioned for clearer hierarchy
+-->
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/grid_spacing_outer"
+        android:background="@drawable/custom_selectable_item_background_rounded"
+        android:clipChildren="false"
+        android:orientation="vertical"
+        android:padding="@dimen/miyo_space_s"
+        android:stateListAnimator="@animator/miyo_card_press_state"
+        tools:layout_width="140dp">
+
+    <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <org.koharu.miyo.image.ui.CoverImageView
+                android:id="@+id/imageView_cover"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?colorSurfaceContainer"
+                android:orientation="horizontal"
+                app:allowRgb565="true"
+                app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Miyo.Cover.Large"
+                tools:ignore="ContentDescription"
+                tools:src="@tools:sample/backgrounds/scenic[5]" />
+
+        <org.koharu.miyo.history.ui.util.ReadingProgressView
+                android:id="@+id/progressView"
+                android:layout_width="@dimen/card_indicator_size"
+                android:layout_height="@dimen/card_indicator_size"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="@dimen/card_indicator_offset" />
+
+        <org.koharu.miyo.core.ui.widgets.IconsView
+                android:id="@+id/iconsView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_marginTop="@dimen/miyo_space_s"
+                android:background="@drawable/bg_list_icons"
+                android:orientation="horizontal"
+                android:padding="@dimen/miyo_space_xs"
+                app:iconSize="14dp"
+                app:iconSpacing="@dimen/miyo_space_xs" />
+
+        <org.koharu.miyo.core.ui.widgets.BadgeView
+                android:id="@+id/badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="@dimen/miyo_space_s"
+                android:visibility="gone"
+                app:maxCharacterCount="@integer/manga_badge_max_character_count"
+                tools:number="8"
+                tools:visibility="visible" />
+
+    </FrameLayout>
+
+    <TextView
+            android:id="@+id/textView_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elegantTextHeight="false"
+            android:ellipsize="end"
+            android:lines="2"
+            android:paddingTop="@dimen/miyo_space_xs"
+            android:paddingBottom="@dimen/miyo_space_xs"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="?android:attr/textColorPrimary"
+            tools:text="@tools:sample/lorem" />
+
+</LinearLayout>

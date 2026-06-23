@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Refined empty state (v2)
+  ~ New layout alongside item_empty_state.xml.
+  ~
+  ~ Refinements:
+  ~  - Smaller 144dp icon (vs 192dp) for less visual dominance
+  ~  - Circular tinted backdrop behind icon (miyo_empty_icon_bg)
+  ~  - Larger title-to-subtitle spacing
+  ~  - Pill-shaped retry button via Widget.Miyo.Button.PillTonal
+  ~  - Subtle entrance animation hint via padding
+-->
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/miyo_space_xxl"
+        android:paddingBottom="?actionBarSize">
+
+    <FrameLayout
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:background="@drawable/bg_empty_icon_circle">
+
+        <org.koharu.miyo.core.image.CoilImageView
+                android:id="@+id/icon"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:tint="@color/miyo_empty_icon"
+                app:crossfadeEnabled="false"
+                tools:ignore="UseAppTint"
+                tools:src="@drawable/ic_empty_favourites" />
+
+    </FrameLayout>
+
+    <TextView
+            android:id="@+id/textPrimary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/miyo_space_l"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            tools:text="@tools:sample/lorem[3]" />
+
+    <TextView
+            android:id="@+id/textSecondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/miyo_space_s"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="@tools:sample/lorem[15]" />
+
+    <Button
+            android:id="@+id/button_retry"
+            style="@style/Widget.Miyo.Button.PillTonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/miyo_space_l"
+            android:visibility="gone"
+            tools:text="@string/try_again"
+            tools:visibility="visible" />
+
+</LinearLayout>

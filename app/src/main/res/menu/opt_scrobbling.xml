@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
-	xmlns:android="http://schemas.android.com/apk/res/android">
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
 
-	<item
-		android:id="@+id/action_browser"
-		android:title="@string/open_in_browser" />
+        <item
+                android:id="@+id/action_browser"
+                android:icon="@drawable/ic_web"
+                android:title="@string/open_in_browser"
+                app:showAsAction="never" />
 
-	<item
-		android:id="@+id/action_edit"
-		android:title="@string/edit" />
+        <item
+                android:id="@+id/action_edit"
+                android:icon="@drawable/ic_edit"
+                android:title="@string/edit"
+                app:showAsAction="never" />
 
-	<item
-		android:id="@+id/action_unregister"
-		android:title="@string/remove" />
+        <item
+                android:id="@+id/action_unregister"
+                android:icon="@drawable/ic_delete"
+                android:title="@string/remove"
+                app:showAsAction="never" />
 
 </menu>

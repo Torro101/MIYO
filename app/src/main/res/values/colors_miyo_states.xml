@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Color State Lists (Additive)
+  ~ Referenced by Widget.Miyo.* extended styles.
+-->
+<resources>
+
+        <!-- Surface card elevated (lighter than surfaceContainer in day, slightly elevated in night) -->
+        <color name="miyo_surface_card_elevated">#FFFFFF</color>
+
+        <!-- Card stroke (very subtle, almost transparent) -->
+        <color name="miyo_card_stroke">#14000000</color>
+
+        <!-- Filter chip background (state list via drawable) - simple version for style use -->
+        <color name="miyo_filter_chip_bg">#EBEFF1</color>
+        <color name="miyo_filter_chip_text">#40484C</color>
+
+        <!-- Quick tile background (very subtle, blends with surface) -->
+        <color name="miyo_quick_tile_bg">#0F006878</color>
+
+        <!-- Chip unselected bg real (referenced by Compact chip) -->
+        <color name="miyo_chip_unselected_bg_real">#EBEFF1</color>
+
+</resources>

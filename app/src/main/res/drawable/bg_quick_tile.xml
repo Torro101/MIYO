@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Quick action tile background
+  ~ Subtle brand-tinted, rounded 16dp corners
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+        android:color="@color/selector_overlay">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_l" />
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_l" />
+            <solid android:color="@color/miyo_quick_tile_bg" />
+        </shape>
+    </item>
+</ripple>

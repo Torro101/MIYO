@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Refined explore source grid item (v2)
+  ~ New layout alongside item_explore_source_grid.xml.
+  ~
+  ~ Refinements:
+  ~  - 76dp FaviconView with 16dp corners (vs 72dp, 8dp corners)
+  ~  - Subtle press scale via state list animator
+  ~  - Refined background using list_selector_rounded
+  ~  - Cleaner vertical rhythm
+-->
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/list_selector_rounded"
+        android:clipChildren="false"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="@dimen/miyo_space_m"
+        android:stateListAnimator="@animator/miyo_card_press_state"
+        tools:layout_width="120dp">
+
+    <org.koharu.miyo.core.ui.image.FaviconView
+            android:id="@+id/imageView_icon"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:background="?colorSurfaceContainerHigh"
+            android:labelFor="@id/textView_title"
+            android:padding="1dp"
+            android:scaleType="fitCenter"
+            app:iconStyle="@style/FaviconDrawable.Large"
+            app:shapeAppearance="@style/ShapeAppearanceOverlay.Miyo.Cover.Large"
+            app:strokeColor="@color/miyo_card_stroke"
+            app:strokeWidth="@dimen/miyo_card_border" />
+
+    <TextView
+            android:id="@+id/textView_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/miyo_space_s"
+            android:drawablePadding="@dimen/miyo_space_xs"
+            android:elegantTextHeight="false"
+            android:ellipsize="end"
+            android:gravity="center_horizontal"
+            android:singleLine="true"
+            android:textAlignment="center"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            tools:drawableStart="@drawable/ic_pin_small"
+            tools:text="@tools:sample/lorem[0]" />
+
+</LinearLayout>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Extended Color Tokens
+  ~ Additive-only: these tokens supplement the existing miyo_* palette.
+  ~ Used by new Widget.Miyo.* styles and new drawable resources.
+  ~ All tokens are theme-aware via DayNight alternatives in values-night/colors_miyo_ext.xml
+-->
+<resources>
+
+        <!-- Extended brand accent ramp (subtle highlights, badges, gradients) -->
+        <color name="miyo_accent">#00B8D4</color>
+        <color name="miyo_accentContainer">#B8F4FF</color>
+        <color name="miyo_onAccent">#001F26</color>
+        <color name="miyo_accentDim">#7AD4E3</color>
+
+        <!-- Soft tonal surfaces for elevated cards (above surfaceContainer) -->
+        <color name="miyo_surfaceElevated">#FFFFFF</color>
+        <color name="miyo_surfaceOverlay">#33006878</color>
+
+        <!-- Gradient endpoints for backdrop scrim on details/reader -->
+        <color name="miyo_scrim_top">#66000000</color>
+        <color name="miyo_scrim_bottom">#E6000000</color>
+        <color name="miyo_scrim_mid">#99000000</color>
+
+        <!-- Section header accent (very subtle teal tint) -->
+        <color name="miyo_sectionHeaderTint">#1A006878</color>
+
+        <!-- Status tints (semantic) -->
+        <color name="miyo_status_reading">#006878</color>
+        <color name="miyo_status_planning">#7A5800</color>
+        <color name="miyo_status_completed">#388E3C</color>
+        <color name="miyo_status_paused">#5C6BC0</color>
+        <color name="miyo_status_dropped">#BA1B1B</color>
+
+        <!-- Subtle divider (instead of solid outline) -->
+        <color name="miyo_divider">#0F000000</color>
+
+        <!-- Chip tonal states (for filter chips) -->
+        <color name="miyo_chip_selected_bg">#FFDEA6</color>
+        <color name="miyo_chip_selected_fg">#261A00</color>
+        <color name="miyo_chip_unselected_bg">#EBEFF1</color>
+        <color name="miyo_chip_unselected_fg">#40484C</color>
+
+        <!-- Quick-action tile backgrounds (very subtle, theme-tinted) -->
+        <color name="miyo_tile_bg_primary">#0F006878</color>
+        <color name="miyo_tile_bg_secondary">#0F4B6269</color>
+        <color name="miyo_tile_bg_tertiary">#0F7A5800</color>
+        <color name="miyo_tile_bg_neutral">#0F40484C</color>
+
+        <!-- FAB shadow (subtle, brand-tinted) -->
+        <color name="miyo_fab_shadow">#33006878</color>
+
+        <!-- Reading progress ring track (lighter than surfaceVariant) -->
+        <color name="miyo_progress_track">#24006878</color>
+
+        <!-- Empty state tints (theme-aware, replaces hardcoded #1976D2) -->
+        <color name="miyo_empty_icon">#59006878</color>
+        <color name="miyo_empty_icon_bg">#0F006878</color>
+
+</resources>

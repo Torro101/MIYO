@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - State list animator for subtle press feedback on cards.
+  ~ Apply via android:stateListAnimator on a clickable card / view.
+  ~ Subtle 3% scale-down on press, smooth release.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <set>
+            <objectAnimator
+                android:duration="100"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleX"
+                android:valueTo="0.97"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="100"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleY"
+                android:valueTo="0.97"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="100"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translationZ"
+                android:valueTo="2dp"
+                android:valueType="floatType" />
+        </set>
+    </item>
+    <item>
+        <set>
+            <objectAnimator
+                android:duration="150"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleX"
+                android:valueTo="1"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="150"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleY"
+                android:valueTo="1"
+                android:valueType="floatType" />
+            <objectAnimator
+                android:duration="150"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translationZ"
+                android:valueTo="0dp"
+                android:valueType="floatType" />
+        </set>
+    </item>
+</selector>

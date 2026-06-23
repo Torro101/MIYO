@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Subtle press-down scale for cards/buttons.
+  ~ Wired via state list animator; uses brand-tinted elevation hint.
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+                android:duration="100"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleX"
+                android:valueFrom="1"
+                android:valueTo="0.97"
+                android:valueType="floatType" />

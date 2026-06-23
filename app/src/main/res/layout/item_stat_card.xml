@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Stat info card (single stat)
+  ~ Used in Details screen for chapters/size/language stats.
+  ~
+  ~ Layout:
+  ~ +-------------------------+
+  ~ | [icon]                  |
+  ~ |                         |
+  ~ |  48          English    |
+  ~ |  Chapters    Language   |
+  ~ +-------------------------+
+-->
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_stat_card"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/miyo_space_m"
+        android:minHeight="@dimen/miyo_info_card_height">
+
+    <ImageView
+            android:id="@+id/imageView_icon"
+            android:layout_width="@dimen/miyo_info_card_icon"
+            android:layout_height="@dimen/miyo_info_card_icon"
+            android:layout_marginBottom="@dimen/miyo_space_xs"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_metadata"
+            android:tint="?attr/colorPrimary"
+            tools:ignore="UseAppTint" />
+
+    <TextView
+            android:id="@+id/textView_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Miyo.StatValue"
+            tools:text="48" />
+
+    <TextView
+            android:id="@+id/textView_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.Miyo.StatLabel"
+            tools:text="Chapters" />
+
+</LinearLayout>

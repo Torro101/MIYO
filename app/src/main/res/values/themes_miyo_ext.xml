@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Refined theme overlay (additive)
+  ~
+  ~ This is a NEW theme overlay that can be applied via setTheme() or via
+  ~ android:theme on a View. It DOES NOT replace or modify the existing
+  ~ Theme.Miyo. It only adds new attribute mappings for the redesigned
+  ~ components.
+  ~
+  ~ Use:
+  ~   - On a root view: android:theme="@style/ThemeOverlay.Miyo.Refined"
+  ~   - Programmatically: ContextThemeWrapper(context, R.style.ThemeOverlay_Miyo_Refined)
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="ThemeOverlay.Miyo.Refined" parent="ThemeOverlay.Material3">
+        <!-- Refined outline variant (subtle, instead of solid outline) -->
+        <item name="colorOutlineVariant">@color/miyo_divider</item>
+        <!-- Subtle highlight tint for chips and selectable items -->
+        <item name="colorControlHighlight">@color/selector_overlay</item>
+        <!-- Brand-tinted activated state for switches/toggles -->
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+    </style>
+
+</resources>

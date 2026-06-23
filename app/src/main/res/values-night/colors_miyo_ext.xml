@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Extended Color Tokens (Night)
+  ~ Night-mode counterpart to values/colors_miyo_ext.xml.
+  ~ All tokens MUST match the day counterparts by name.
+-->
+<resources>
+
+        <!-- Extended brand accent ramp -->
+        <color name="miyo_accent">#5DDFEE</color>
+        <color name="miyo_accentContainer">#004E59</color>
+        <color name="miyo_onAccent">#A8EDFF</color>
+        <color name="miyo_accentDim">#2D8FA3</color>
+
+        <!-- Soft tonal surfaces for elevated cards -->
+        <color name="miyo_surfaceElevated">#1F2426</color>
+        <color name="miyo_surfaceOverlay">#5982DFF1</color>
+
+        <!-- Gradient endpoints for backdrop scrim -->
+        <color name="miyo_scrim_top">#99000000</color>
+        <color name="miyo_scrim_bottom">#F2000000</color>
+        <color name="miyo_scrim_mid">#CC000000</color>
+
+        <!-- Section header accent -->
+        <color name="miyo_sectionHeaderTint">#3382DFF1</color>
+
+        <!-- Status tints (semantic) - night variants -->
+        <color name="miyo_status_reading">#82DFF1</color>
+        <color name="miyo_status_planning">#F3C156</color>
+        <color name="miyo_status_completed">#7AD68A</color>
+        <color name="miyo_status_paused">#9FA6D9</color>
+        <color name="miyo_status_dropped">#FFB4AB</color>
+
+        <!-- Subtle divider -->
+        <color name="miyo_divider">#1AFFFFFF</color>
+
+        <!-- Chip tonal states -->
+        <color name="miyo_chip_selected_bg">#5C4200</color>
+        <color name="miyo_chip_selected_fg">#FFDEA6</color>
+        <color name="miyo_chip_unselected_bg">#272B2D</color>
+        <color name="miyo_chip_unselected_fg">#C0C8CC</color>
+
+        <!-- Quick-action tile backgrounds (subtle tints) -->
+        <color name="miyo_tile_bg_primary">#2482DFF1</color>
+        <color name="miyo_tile_bg_secondary">#24B2CBD2</color>
+        <color name="miyo_tile_bg_tertiary">#24F3C156</color>
+        <color name="miyo_tile_bg_neutral">#24C0C8CC</color>
+
+        <!-- FAB shadow -->
+        <color name="miyo_fab_shadow">#595DDFEE</color>
+
+        <!-- Reading progress ring track -->
+        <color name="miyo_progress_track">#3382DFF1</color>
+
+        <!-- Empty state tints -->
+        <color name="miyo_empty_icon">#7A82DFF1</color>
+        <color name="miyo_empty_icon_bg">#2482DFF1</color>
+
+</resources>

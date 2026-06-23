@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Extended Shape Appearances & Widget Styles
+  ~ ADDITIVE ONLY: every name below is NEW; no existing style is modified.
+  ~ Existing layouts continue to use the original Widget.Miyo.* styles unchanged.
+  ~ New layouts/components can opt into these refined styles.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+        <!-- ==== New ShapeAppearance overlays (alongside existing Miyo.Cover / .Cover.Medium / .Cover.Small / .Circle) ==== -->
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.Large" parent="">
+                <item name="cornerSize">16dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.ExtraLarge" parent="">
+                <item name="cornerSize">20dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.Pill" parent="">
+                <item name="cornerFamily">rounded</item>
+                <item name="cornerSize">50%</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card" parent="">
+                <item name="cornerSize">12dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card.Large" parent="">
+                <item name="cornerSize">16dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card.ExtraLarge" parent="">
+                <item name="cornerSize">20dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Sheet" parent="">
+                <item name="cornerSize">28dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Pill" parent="">
+                <item name="cornerFamily">rounded</item>
+                <item name="cornerSize">50%</item>
+        </style>
+
+        <!-- ==== New TextAppearances (additive) ==== -->
+
+        <style name="TextAppearance.Miyo.SectionHeader" parent="TextAppearance.Material3.TitleSmall">
+                <item name="android:letterSpacing">0.08</item>
+                <item name="android:textAllCaps">true</item>
+                <item name="android:textSize">12sp</item>
+                <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        </style>
+
+        <style name="TextAppearance.Miyo.StatValue" parent="TextAppearance.Material3.HeadlineSmall">
+                <item name="android:textColor">?attr/colorOnSurface</item>
+        </style>
+
+        <style name="TextAppearance.Miyo.StatLabel" parent="TextAppearance.Material3.LabelSmall">
+                <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+                <item name="android:letterSpacing">0.04</item>
+        </style>
+
+        <style name="TextAppearance.Miyo.QuickTile" parent="TextAppearance.Material3.LabelMedium">
+                <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        </style>
+
+        <!-- ==== New Widget styles (additive — new names only) ==== -->
+
+        <!-- Refined elevated card (uses surfaceElevated, subtle border, soft shadow) -->
+        <style name="Widget.Miyo.CardView.Elevated" parent="Widget.Material3.CardView.Elevated">
+                <item name="cardBackgroundColor">@color/miyo_surface_card_elevated</item>
+                <item name="cardCornerRadius">@dimen/miyo_corner_l</item>
+                <item name="cardElevation">@dimen/miyo_elevation_2</item>
+                <item name="strokeColor">@color/miyo_card_stroke</item>
+                <item name="strokeWidth">@dimen/miyo_card_border</item>
+                <item name="contentPadding">@dimen/miyo_space_l</item>
+        </style>
+
+        <!-- Filled card (no elevation, subtle border) -->
+        <style name="Widget.Miyo.CardView.Filled" parent="Widget.Material3.CardView.Filled">
+                <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+                <item name="cardCornerRadius">@dimen/miyo_corner_l</item>
+                <item name="cardElevation">@dimen/miyo_elevation_0</item>
+                <item name="strokeColor">@color/miyo_card_stroke</item>
+                <item name="strokeWidth">@dimen/miyo_card_border</item>
+        </style>
+
+        <!-- Outlined card (used for selectable items in dialogs) -->
+        <style name="Widget.Miyo.CardView.Outlined" parent="Widget.Material3.CardView.Outlined">
+                <item name="cardCornerRadius">@dimen/miyo_corner_m</item>
+                <item name="strokeColor">?attr/colorOutlineVariant</item>
+                <item name="strokeWidth">@dimen/miyo_card_border</item>
+        </style>
+
+        <!-- Quick action tile button (for home screen 2x2 quick access) -->
+        <style name="Widget.Miyo.Button.QuickTile" parent="Widget.Material3.Button.TextButton">
+                <item name="android:minHeight">@dimen/miyo_quick_tile_height</item>
+                <item name="android:minWidth">0dp</item>
+                <item name="android:insetTop">0dp</item>
+                <item name="android:insetBottom">0dp</item>
+                <item name="android:padding">@dimen/miyo_space_s</item>
+                <item name="iconGravity">top</item>
+                <item name="iconSize">@dimen/miyo_quick_tile_icon</item>
+                <item name="iconPadding">@dimen/miyo_space_s</item>
+                <item name="android:textAppearance">@style/TextAppearance.Miyo.QuickTile</item>
+                <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+                <item name="backgroundTint">@color/miyo_quick_tile_bg</item>
+                <item name="shapeAppearance">?attr/shapeAppearanceCornerLarge</item>
+                <item name="android:singleLine">false</item>
+                <item name="android:gravity">center|top</item>
+                <item name="android:paddingTop">14dp</item>
+        </style>
+
+        <!-- Segmented button container (Material3 segmented button) -->
+        <style name="Widget.Miyo.SegmentedButton" parent="Widget.Material3.SegmentedButton">
+                <item name="shapeAppearance">?attr/shapeAppearanceCornerFull</item>
+        </style>
+
+        <!-- Filter chip - refined with brand tint when checked -->
+        <style name="Widget.Miyo.Chip.Filter.Brand" parent="Widget.Material3.Chip.Filter">
+                <item name="android:minHeight">@dimen/miyo_filter_chip_height</item>
+                <item name="chipBackgroundColor">@color/miyo_filter_chip_bg</item>
+                <item name="android:textColor">@color/miyo_filter_chip_text</item>
+                <item name="chipStrokeWidth">@dimen/miyo_card_border</item>
+                <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+                <item name="shapeAppearance">?attr/shapeAppearanceCornerSmall</item>
+        </style>
+
+        <!-- Section header text view (uppercase, letter-spaced) -->
+        <style name="Widget.Miyo.TextView.SectionHeader" parent="Widget.MaterialComponents.TextView">
+                <item name="android:textAppearance">@style/TextAppearance.Miyo.SectionHeader</item>
+                <item name="android:gravity">center_vertical</item>
+                <item name="android:drawablePadding">@dimen/miyo_space_s</item>
+                <item name="android:paddingStart">@dimen/miyo_space_xs</item>
+                <item name="android:paddingEnd">@dimen/miyo_space_xs</item>
+                <item name="android:paddingTop">@dimen/miyo_space_s</item>
+                <item name="android:paddingBottom">@dimen/miyo_space_s</item>
+                <item name="android:minHeight">@dimen/miyo_section_header_height</item>
+        </style>
+
+        <!-- Stat value text view (for info cards) -->
+        <style name="Widget.Miyo.TextView.StatValue" parent="Widget.MaterialComponents.TextView">
+                <item name="android:textAppearance">@style/TextAppearance.Miyo.StatValue</item>
+                <item name="android:gravity">center</item>
+        </style>
+
+        <!-- Stat label text view (for info cards) -->
+        <style name="Widget.Miyo.TextView.StatLabel" parent="Widget.MaterialComponents.TextView">
+                <item name="android:textAppearance">@style/TextAppearance.Miyo.StatLabel</item>
+                <item name="android:gravity">center</item>
+        </style>
+
+        <!-- Pill-shaped primary action button (Continue button on details) -->
+        <style name="Widget.Miyo.Button.PillPrimary" parent="Widget.Material3.Button">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Pill</item>
+                <item name="android:minHeight">56dp</item>
+                <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+                <item name="iconSize">22dp</item>
+                <item name="iconTint">?attr/colorOnPrimary</item>
+                <item name="android:paddingHorizontal">24dp</item>
+        </style>
+
+        <!-- Pill-shaped tonal button -->
+        <style name="Widget.Miyo.Button.PillTonal" parent="Widget.Material3.Button.TonalButton">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Pill</item>
+                <item name="android:minHeight">48dp</item>
+                <item name="iconSize">20dp</item>
+        </style>
+
+        <!-- Icon-only circular button (for top app bar actions) -->
+        <style name="Widget.Miyo.Button.IconCircle" parent="Widget.Material3.Button.IconButton">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Circle</item>
+                <item name="android:minWidth">48dp</item>
+                <item name="android:minHeight">48dp</item>
+        </style>
+
+        <!-- Filled tonal icon button (toggleable, for view-mode switches) -->
+        <style name="Widget.Miyo.Button.IconToggle" parent="Widget.Material3.Button.IconButton.Filled.Tonal">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Circle</item>
+                <item name="android:minWidth">40dp</item>
+                <item name="android:minHeight">40dp</item>
+                <item name="iconSize">20dp</item>
+        </style>
+
+        <!-- Outlined toggle chip (for sort/filter dropdowns) -->
+        <style name="Widget.Miyo.Chip.Toggle" parent="Widget.Material3.Chip.Input">
+                <item name="android:checkable">true</item>
+                <item name="chipIconVisible">true</item>
+                <item name="closeIconVisible">false</item>
+                <item name="android:minHeight">@dimen/miyo_filter_chip_height</item>
+        </style>
+
+        <!-- Compact chip (for genres, smaller) -->
+        <style name="Widget.Miyo.Chip.Compact" parent="Widget.Material3.Chip.Suggestion">
+                <item name="android:minHeight">32dp</item>
+                <item name="chipMinTouchTargetSize">0dp</item>
+                <item name="android:textSize">12sp</item>
+                <item name="chipBackgroundColor">@color/miyo_chip_unselected_bg_real</item>
+        </style>
+
+        <!-- Refined progress indicator - thin, brand-tinted -->
+        <style name="Widget.Miyo.LinearProgressIndicator.Thin" parent="Widget.Material3.LinearProgressIndicator">
+                <item name="indicatorColor">?attr/colorPrimary</item>
+                <item name="trackColor">@color/miyo_progress_track</item>
+                <item name="trackThickness">3dp</item>
+                <item name="trackCornerRadius">@dimen/mtrl_progress_indicator_full_rounded_corner_radius</item>
+        </style>
+
+        <!-- Circular progress with brand tint -->
+        <style name="Widget.Miyo.CircularProgressIndicator.Brand" parent="Widget.Material3.CircularProgressIndicator">
+                <item name="indicatorColor">?attr/colorPrimary</item>
+                <item name="trackColor">@color/miyo_progress_track</item>
+                <item name="trackThickness">3dp</item>
+                <item name="trackCornerRadius">@dimen/mtrl_progress_indicator_full_rounded_corner_radius</item>
+        </style>
+
+        <!-- Divider - subtle (replaces solid colorOutline) -->
+        <style name="Widget.Miyo.Divider" parent="Widget.Material3.MaterialDivider">
+                <item name="dividerColor">@color/miyo_divider</item>
+                <item name="android:layout_height">1dp</item>
+        </style>
+
+        <!-- Refine bottom sheet to use new corner radius -->
+        <style name="Widget.Miyo.BottomSheet.Modal.Rounded" parent="Widget.Miyo.BottomSheet.Modal">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Sheet</item>
+                <item name="backgroundTint">?attr/colorSurfaceContainerLow</item>
+        </style>
+
+</resources>

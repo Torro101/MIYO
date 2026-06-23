@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Pill-shaped tonal button background
+  ~ Used by Widget.Miyo.Button.PillTonal style
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+        android:color="@color/selector_overlay">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_pill" />
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_pill" />
+            <solid android:color="?attr/colorSecondaryContainer" />
+        </shape>
+    </item>
+</ripple>

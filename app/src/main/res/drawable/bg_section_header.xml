@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Section header tinted background
+  ~ Very subtle brand tint used as a backdrop for section header text rows.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+       android:shape="rectangle">
+    <corners android:radius="@dimen/miyo_corner_s" />
+    <solid android:color="@color/miyo_sectionHeaderTint" />
+</shape>
