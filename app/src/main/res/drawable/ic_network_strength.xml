@@ -8,5 +8,5 @@
         android:viewportHeight="24">
         <path
                 android:fillColor="#000"
-                android:pathData="M21,3H3V13C3,13 6,11 12,11C18,11 21,13 21,13V3M21,15C21,15 18,17 12,17C6,17 3,15 3,15V21H21V15Z" />
+                android:pathData="M2 22h20V2L2 22zm18-2H6.83L20 6.83V20z" />
 </vector>
