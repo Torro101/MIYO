@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ MIYO manga grid item - REDESIGNED to match reference screenshots.
-  ~ Changes:
-  ~  - 16dp cover corners (was 12dp) for softer, modern look
-  ~  - Heart/favorite icon moved to top-START (matches screenshots)
-  ~  - Chapter count badge (orange circle, white text) on bottom-end of cover
-  ~  - Subtle press-scale state list animator
-  ~  - Tighter title spacing, 2-line max
+  ~ Heart/favorite icon at top-start, chapter count badge at bottom-end.
+  ~ Subtle press-scale state list animator for tactile feedback.
 -->
 <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
