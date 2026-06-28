@@ -9,6 +9,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Rect
+import android.os.Build
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import dagger.Reusable
@@ -201,7 +202,7 @@ class ImageEnhancementProcessor @Inject constructor(
                 encodings: List<OutputEncoding>,
                 profile: BundledImageRefinementModel.Profile,
         ): OutputEncoding? {
-                val decoder = BitmapRegionDecoder.newInstance(sourceFile.absolutePath, false) ?: return null
+                val decoder = createRegionDecoder(sourceFile) ?: return null
                 var outputBitmap: Bitmap? = null
                 return try {
                         outputBitmap = Bitmap.createBitmap(bounds.width, bounds.height, Bitmap.Config.ARGB_8888)
@@ -250,6 +251,18 @@ class ImageEnhancementProcessor @Inject constructor(
                         outputBitmap?.recycle()
                         decoder.recycle()
                 }
+        }
+
+        private fun createRegionDecoder(sourceFile: File): BitmapRegionDecoder? = try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        BitmapRegionDecoder.newInstance(sourceFile)
+                } else {
+                        @Suppress("DEPRECATION")
+                        BitmapRegionDecoder.newInstance(sourceFile.absolutePath, false)
+                }
+        } catch (e: Exception) {
+                e.printStackTraceDebug()
+                null
         }
 
         private fun writeBitmap(

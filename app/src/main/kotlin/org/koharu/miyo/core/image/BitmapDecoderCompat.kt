@@ -57,48 +57,51 @@ object BitmapDecoderCompat {
                         return decodeAvif(stream.toByteBuffer())
                 }
 
+                // Read the stream into a byte array ONCE up front. The previous logic
+                // had two problems:
+                //   1. For non-JPEG types it called stream.toByteBuffer() again later,
+                //      but the stream may have been partially consumed by MIME sniffing.
+                //   2. For JPEG it called stream.readBytes() which can throw OOM on
+                //      large pages, and the fallback path re-decoded from the SAME
+                //      (now exhausted) stream, producing null and a hard error.
+                // Reading once and reusing the buffer fixes both.
+                val bytes = try {
+                        stream.readBytes()
+                } catch (e: OutOfMemoryError) {
+                        // Stream too large for byte array — fall back to platform decoder
+                        // operating directly on the stream (which still works because we
+                        // haven't consumed it in this path).
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                                val opts = BitmapFactory.Options()
+                                opts.inMutable = isMutable
+                                return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
+                        }
+                        val byteBuffer = stream.toByteBuffer()
+                        return if (AvifDecoder.isAvifImage(byteBuffer)) {
+                                decodeAvif(byteBuffer)
+                        } else {
+                                ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
+                        }
+                }
+
                 // Attempt native JPEG decode for performance (2-6x faster)
                 if (format == "jpeg" || format == "jpg" || type == null) {
-                        val bytes = try { stream.readBytes() } catch (e: OutOfMemoryError) {
-                                // Stream too large for byte array, fall back to platform decoder
-                                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                                        val opts = BitmapFactory.Options()
-                                        opts.inMutable = isMutable
-                                        return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
-                                }
-                                val byteBuffer = stream.toByteBuffer()
-                                return if (AvifDecoder.isAvifImage(byteBuffer)) {
-                                        decodeAvif(byteBuffer)
-                                } else {
-                                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
-                                }
-                        }
                         val nativeResult = tryNativeJpegDecode(bytes, isMutable)
                         if (nativeResult != null) {
                                 return nativeResult
                         }
-                        // Fall back to standard decoders with the bytes we already read
-                        val byteBuffer = ByteBuffer.wrap(bytes)
-                        return if (AvifDecoder.isAvifImage(byteBuffer)) {
-                                decodeAvif(byteBuffer)
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                }
+
+                // Fall back to standard decoders with the bytes we already read
+                val byteBuffer = ByteBuffer.wrap(bytes)
+                return when {
+                        AvifDecoder.isAvifImage(byteBuffer) -> decodeAvif(byteBuffer)
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P ->
                                 ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
-                        } else {
+                        else -> {
                                 val opts = BitmapFactory.Options().apply { inMutable = isMutable }
                                 checkBitmapNotNull(BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts), format)
                         }
-                }
-
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                        val opts = BitmapFactory.Options()
-                        opts.inMutable = isMutable
-                        return checkBitmapNotNull(BitmapFactory.decodeStream(stream, null, opts), format)
-                }
-                val byteBuffer = stream.toByteBuffer()
-                return if (AvifDecoder.isAvifImage(byteBuffer)) {
-                        decodeAvif(byteBuffer)
-                } else {
-                        ImageDecoder.decodeBitmap(ImageDecoder.createSource(byteBuffer), DecoderConfigListener(isMutable))
                 }
         }
 

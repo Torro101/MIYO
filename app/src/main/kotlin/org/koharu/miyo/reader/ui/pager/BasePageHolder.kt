@@ -158,7 +158,17 @@ abstract class BasePageHolder<B : ViewBinding>(
                         ComponentCallbacks2.TRIM_MEMORY_MODERATE,
                         ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
                         ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
-                                ssiv.recycle()
+                                // Guard: only recycle when the page is in the Shown state AND
+                                // the holder is currently resumed. Recycling a page that is
+                                // mid-load (Loading / Converting / Loaded-but-not-yet-Shown)
+                                // corrupts the SSIV state machine: the decoder callback fires
+                                // onReady() on a recycled view, which then calls
+                                // setScaleAndCenter() and crashes with
+                                // "ImageView cannot be used after recycle()".
+                                val state = viewModel.state.value
+                                if (state is PageState.Shown && isResumed) {
+                                        ssiv.recycle()
+                                }
                                 // Never reload immediately after recycle — even when resumed,
                                 // the immediate recycle+reload causes a visible flash and can
                                 // trigger layout thrashing in the webtoon reader (the image
@@ -166,7 +176,7 @@ abstract class BasePageHolder<B : ViewBinding>(
                                 // be inconsistent for a frame). Instead, let onResume()
                                 // handle the lazy restore: it checks (Shown && !ssiv.isReady)
                                 // and calls reloadImage() after the memory pressure has passed.
-                                if (viewModel.state.value !is PageState.Shown) {
+                                if (state !is PageState.Shown) {
                                         viewModel.evictFromMemory()
                                 }
                         }

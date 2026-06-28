@@ -39,6 +39,14 @@ class WebtoonHolder(
         override fun onReady() {
                 binding.ssiv.colorFilter = settings.colorFilter?.toColorFilter()
                 with(binding.ssiv) {
+                        // Guard: onReady may fire while sWidth/sHeight are still 0 (e.g.
+                        // right after a recycle+reload cycle). In that case skip the
+                        // scroll restoration — SSIV will fire onReady() again once the
+                        // image is actually decoded, and WebtoonImageView.scrollTo()
+                        // already defers when not ready.
+                        if (sWidth == 0 || sHeight == 0 || width == 0) {
+                                return
+                        }
                         // Priority order for scroll restoration:
                         // 1. Explicitly saved scroll (from chapter restore / state save)
                         // 2. Scroll preserved across recycle/reload (from onTrimMemory)
