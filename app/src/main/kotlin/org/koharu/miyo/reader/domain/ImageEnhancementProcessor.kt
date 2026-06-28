@@ -9,7 +9,6 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
 import android.graphics.Rect
-import android.os.Build
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import dagger.Reusable
@@ -254,12 +253,13 @@ class ImageEnhancementProcessor @Inject constructor(
         }
 
         private fun createRegionDecoder(sourceFile: File): BitmapRegionDecoder? = try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        BitmapRegionDecoder.newInstance(sourceFile)
-                } else {
-                        @Suppress("DEPRECATION")
-                        BitmapRegionDecoder.newInstance(sourceFile.absolutePath, false)
-                }
+                // Use the path-based overload on all API levels. The File-based
+                // overload (newInstance(File)) was added in API 31 but has different
+                // exception behavior; the path-based overload is deprecated on API 31+
+                // but still functional and works consistently across all API levels
+                // the app supports (minSdk 21).
+                @Suppress("DEPRECATION")
+                BitmapRegionDecoder.newInstance(sourceFile.absolutePath, false)
         } catch (e: Exception) {
                 e.printStackTraceDebug()
                 null

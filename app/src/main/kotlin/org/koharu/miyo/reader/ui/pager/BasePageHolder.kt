@@ -166,7 +166,7 @@ abstract class BasePageHolder<B : ViewBinding>(
                                 // setScaleAndCenter() and crashes with
                                 // "ImageView cannot be used after recycle()".
                                 val state = viewModel.state.value
-                                if (state is PageState.Shown && isResumed) {
+                                if (state is PageState.Shown && isResumed()) {
                                         ssiv.recycle()
                                 }
                                 // Never reload immediately after recycle — even when resumed,
