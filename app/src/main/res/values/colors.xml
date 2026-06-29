@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-        <color name="error">#BA1B1B</color>
-        <color name="errorContainer">#FFDAD4</color>
-        <color name="onError">#FFFFFF</color>
-        <color name="onErrorContainer">#410001</color>
+	<color name="error">#BA1B1B</color>
+	<color name="errorContainer">#FFDAD4</color>
+	<color name="onError">#FFFFFF</color>
+	<color name="onErrorContainer">#410001</color>
 
-        <!-- AMOLED Theme -->
-        <color name="surface_amoled">#080808</color>
-        <color name="background_amoled">#000000</color>
+	<!-- AMOLED Theme -->
+	<color name="surface_amoled">#080808</color>
+	<color name="background_amoled">#000000</color>
 
-        <!-- Other Colors -->
+	<!-- Other Colors -->
 
-        <color name="blue_primary">#1976D2</color>
-        <color name="grey">#424242</color>
-        <color name="dim">#99000000</color>
-        <color name="dim2">#C8FFFFFF</color>
-        <color name="dim_lite">#66000000</color>
-        <color name="warning">#E65100</color>
-        <color name="launcher_background">#1E1E1E</color>
-        <color name="miyo_splash_background">#121212</color>
-        <color name="miyo_slime_shadow">#FF8F42</color>
-        <color name="miyo_slime_body">#FFA559</color>
-        <color name="miyo_slime_core">#FFE0CC</color>
-        <color name="miyo_slime_eye">#1E1E1E</color>
-        <color name="miyo_slime_bubble">#FFCC99</color>
-        <color name="common_green">#388E3C</color>
-        <color name="common_red">#D32F2F</color>
-        <color name="common_yellow">#FBC02D</color>
-        <color name="nsfw_18">#FF8A65</color>
-        <color name="nsfw_16">#FFD54F</color>
+	<color name="blue_primary">#1976D2</color>
+	<color name="grey">#424242</color>
+	<color name="dim">#99000000</color>
+	<color name="dim2">#C8FFFFFF</color>
+	<color name="dim_lite">#66000000</color>
+	<color name="warning">#E65100</color>
+	<color name="launcher_background">#081217</color>
+	<color name="miyo_splash_background">#F6FBFF</color>
+	<color name="miyo_slime_shadow">#18AFCF</color>
+	<color name="miyo_slime_body">#65DFF7</color>
+	<color name="miyo_slime_core">#DDFBFF</color>
+	<color name="miyo_slime_eye">#102A33</color>
+	<color name="miyo_slime_bubble">#A6F4FF</color>
+	<color name="common_green">#388E3C</color>
+	<color name="common_red">#D32F2F</color>
+	<color name="common_yellow">#FBC02D</color>
+	<color name="nsfw_18">#FF8A65</color>
+	<color name="nsfw_16">#FFD54F</color>
 </resources>
