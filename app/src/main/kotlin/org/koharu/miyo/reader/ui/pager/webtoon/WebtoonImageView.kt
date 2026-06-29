@@ -143,40 +143,25 @@ class WebtoonImageView @JvmOverloads constructor(
          * insight is that sWidth/sHeight may NOT yet reflect the new downsampled
          * dimensions at the time this fires — they can be stale.
          *
-         * If we set scale = viewWidth / staleSWidth here, we'll compute the
-         * WRONG scale (too large if going from downsampled→full-res, too small
-         * if going from full-res→downsampled). This was the root cause of both
-         * the "page shrinks" and "page expands" bugs.
+         * ROOT CAUSE OF THE ENLARGEMENT BUG:
+         * If we compute scale = width / staleSWidth here, we get a WRONG scale.
+         * When going from downsampled → full-res, staleSWidth is SMALLER than
+         * the new sWidth, so scale becomes TOO LARGE → the page enlarges and
+         * stays stuck because minScale/maxScale are locked to the wrong value.
+         * The user has to exit and re-enter to fix it.
          *
-         * The correct approach: do NOT set scale here. Instead, just save the
-         * current scroll position. SSIV will fire onReady() after the re-decode
-         * completes, at which point sWidth/sHeight are correct and adjustScale()
-         * will compute the right scale.
-         *
-         * However, we must prevent SSIV from internally resetting minScale/
-         * maxScale to wrong values during the re-decode. We do this by
-         * re-applying our SCALE_TYPE_CUSTOM + minScale/maxScale using the
-         * CURRENT (still-valid) dimensions, without calling setScaleAndCenter()
-         * (which would apply a wrong display scale with stale sWidth).
+         * FIX: Do NOT set minScale, maxScale, or call setScaleAndCenter() here.
+         * Just call super (which lets SSIV do its internal bookkeeping) and
+         * preserve the current scroll. The re-decode will fire onReady() where
+         * sWidth/sHeight are correct and applyFillWidthScale() will set the
+         * right scale.
          */
         override fun onDownSamplingChanged() {
                 super.onDownSamplingChanged()
-                if (isReady && sWidth > 0 && width > 0) {
-                        // Preserve the scale constraints so SSIV doesn't reset them
-                        // during the re-decode. Use the CURRENT sWidth which is still
-                        // valid for the current display state.
-                        val scale = width / sWidth.toFloat()
-                        if (scale.isFinite() && scale > 0f) {
-                                minScale = scale
-                                maxScale = scale
-                                minimumScaleType = SCALE_TYPE_CUSTOM
-                        }
-                        // Do NOT call setScaleAndCenter() here — the current scale is
-                        // still correct for the current source dimensions. The re-decode
-                        // will trigger onReady() where we'll recalculate with the new
-                        // dimensions.
-                        clampScrollToRange()
-                }
+                // Do NOT touch minScale/maxScale/scale here. onReady() will
+                // fire after the re-decode and apply the correct fill-width
+                // scale with the updated sWidth.
+                clampScrollToRange()
         }
 
         override fun onReady() {
@@ -187,15 +172,15 @@ class WebtoonImageView @JvmOverloads constructor(
 
         override fun onImageLoaded() {
                 super.onImageLoaded()
-                // After image dimensions are known, re-apply scale if needed.
-                // This handles the case where onReady() was called with incomplete
-                // state and the scale wasn't applied correctly.
-                if (isReady && sWidth > 0 && width > 0) {
-                        val targetScale = width / sWidth.toFloat()
-                        if (targetScale.isFinite() && targetScale > 0f && lastAppliedScale != targetScale) {
-                                applyFillWidthScale(requestLayout = false)
-                        }
-                }
+                // Do NOT re-apply scale here. onImageLoaded() can fire multiple
+                // times during a downsampling transition, and sWidth/sHeight may
+                // be stale at each firing. Applying scale from stale dimensions
+                // was the root cause of the page enlargement bug.
+                //
+                // onReady() is the authoritative callback for scale application:
+                // it fires once the image is fully decoded and sWidth/sHeight
+                // are guaranteed correct. applyFillWidthScale() in onReady()
+                // handles all scale-setting.
                 clampScrollToRange()
         }
 
