@@ -17,6 +17,7 @@ import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import org.koharu.miyo.BuildConfig
 import org.koharu.miyo.R
 import org.koharu.miyo.core.nav.router
 import org.koharu.miyo.core.prefs.AppSettings
@@ -44,6 +45,11 @@ class TrackerSettingsFragment :
 
 	override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
 		addPreferencesFromResource(R.xml.pref_tracker)
+
+		// Tracker debug log is a development tool — hide it from release builds
+		if (!BuildConfig.DEBUG) {
+			findPreference<Preference>(AppSettings.KEY_TRACKER_DEBUG)?.isVisible = false
+		}
 
 		findPreference<MultiSelectListPreference>(AppSettings.KEY_TRACK_SOURCES)
 			?.summaryProvider = MultiSummaryProvider(R.string.dont_check)

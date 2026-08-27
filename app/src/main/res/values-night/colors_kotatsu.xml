@@ -1,40 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Colors for Default theme (Night mode)
-  ~ Matches the reference screenshot design:
-  ~   background: #121212 (dark neutral, matches screenshot)
-  ~   surfaceContainer: #1E1E1E (card background in screenshots)
-  ~   primary: #FF8F42 (the orange accent from screenshots)
-  ~   onSurface: #FFFFFF (titles)
-  ~   onSurfaceVariant: #CCCCCC (metadata, secondary text)
+  ~ MIYO "Ember" theme — Night palette
+  ~ Warm dark surfaces with the signature #FF8F42 mango accent.
+  ~ Continues the reference-screenshot design language (warm neutrals, orange brand).
 -->
 <resources>
         <color name="miyo_primary">#FF8F42</color>
         <color name="miyo_primaryContainer">#7A3500</color>
-        <color name="miyo_onPrimary">#1E1E1E</color>
+        <color name="miyo_onPrimary">#211A12</color>
         <color name="miyo_onPrimaryContainer">#FFDCC2</color>
-        <color name="miyo_inversePrimary">#BB5300</color>
+        <color name="miyo_inversePrimary">#8C4A00</color>
         <color name="miyo_secondary">#E0C4A4</color>
         <color name="miyo_secondaryContainer">#5A4530</color>
-        <color name="miyo_onSecondary">#1E1E1E</color>
+        <color name="miyo_onSecondary">#211A12</color>
         <color name="miyo_onSecondaryContainer">#FFDCC2</color>
         <color name="miyo_tertiary">#C4CCA0</color>
         <color name="miyo_tertiaryContainer">#444A25</color>
-        <color name="miyo_onTertiary">#1E1E1E</color>
+        <color name="miyo_onTertiary">#211A12</color>
         <color name="miyo_onTertiaryContainer">#E0E8AF</color>
-        <color name="miyo_surface">#121212</color>
-        <color name="miyo_surfaceDim">#121212</color>
-        <color name="miyo_surfaceBright">#3A3128</color>
-        <color name="miyo_surfaceContainerLowest">#0C0C0C</color>
-        <color name="miyo_surfaceContainerLow">#1A1A1A</color>
-        <color name="miyo_surfaceContainer">#1E1E1E</color>
-        <color name="miyo_surfaceContainerHigh">#2A2A2A</color>
-        <color name="miyo_surfaceContainerHighest">#353535</color>
-        <color name="miyo_surfaceVariant">#524536</color>
-        <color name="miyo_onSurface">#FFFFFF</color>
-        <color name="miyo_onSurfaceVariant">#CCCCCC</color>
-        <color name="miyo_inverseSurface">#F7EFE3</color>
+        <color name="miyo_surface">#141210</color>
+        <color name="miyo_surfaceDim">#141210</color>
+        <color name="miyo_surfaceBright">#3B342F</color>
+        <color name="miyo_surfaceContainerLowest">#0D0C0A</color>
+        <color name="miyo_surfaceContainerLow">#1C1917</color>
+        <color name="miyo_surfaceContainer">#221E1B</color>
+        <color name="miyo_surfaceContainerHigh">#2D2824</color>
+        <color name="miyo_surfaceContainerHighest">#38322D</color>
+        <color name="miyo_surfaceVariant">#524539</color>
+        <color name="miyo_onSurface">#FBF5F0</color>
+        <color name="miyo_onSurfaceVariant">#CFC1B6</color>
+        <color name="miyo_inverseSurface">#F3EAE2</color>
         <color name="miyo_inverseOnSurface">#383022</color>
-        <color name="miyo_background">#121212</color>
-        <color name="miyo_outline">#8A8A8A</color>
+        <color name="miyo_background">#141210</color>
+        <color name="miyo_outline">#8C8078</color>
 </resources>

@@ -230,7 +230,7 @@
 
 	<com.google.android.material.progressindicator.LinearProgressIndicator
 		android:id="@+id/progress"
-		style="?linearProgressIndicatorStyle"
+		style="@style/Widget.Miyo.LinearProgressIndicator.Thin"
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
 		android:layout_marginStart="@dimen/margin_normal"

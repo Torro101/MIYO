@@ -57,7 +57,7 @@
                 android:layout_marginHorizontal="@dimen/margin_normal"
                 android:layout_marginTop="@dimen/margin_normal"
                 android:text="@string/read_mode"
-                android:textAppearance="?textAppearanceTitleSmall" />
+                android:textAppearance="@style/TextAppearance.Miyo.SectionHeader" />
 
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/checkableGroup"

@@ -4,7 +4,7 @@
 
         <style name="ThemeOverlay.Miyo.AlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
                 <item name="alertDialogStyle">@style/AlertDialog.Miyo</item>
-                <item name="dialogCornerRadius">@dimen/m3_alert_dialog_corner_size</item>
+                <item name="dialogCornerRadius">@dimen/miyo_corner_xxl</item>
         </style>
 
         <style name="AlertDialog.Miyo" parent="MaterialAlertDialog.Material3">
@@ -66,12 +66,12 @@
         <style name="Widget.Miyo.Chip" parent="Widget.Material3.Chip.Suggestion" />
 
         <style name="Widget.Miyo.Chip.Filter" parent="Widget.Material3.Chip.Filter">
-                <item name="android:minHeight">36dp</item>
+                <item name="android:minHeight">@dimen/miyo_filter_chip_height</item>
                 <item name="shapeAppearance">?attr/shapeAppearanceCornerSmall</item>
         </style>
 
         <style name="Widget.Miyo.Chip.Assist" parent="Widget.Material3.Chip.Assist">
-                <item name="android:minHeight">36dp</item>
+                <item name="android:minHeight">@dimen/miyo_filter_chip_height</item>
         </style>
 
         <style name="Widget.Miyo.Chip.Dropdown" parent="Widget.Material3.Chip.Assist">

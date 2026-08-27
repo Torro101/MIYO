@@ -6,13 +6,8 @@
         <color name="onError">#680003</color>
         <color name="onErrorContainer">#FFDAD4</color>
         <color name="warning">#FB8C00</color>
-        <color name="launcher_background">#1E1E1E</color>
-        <color name="miyo_splash_background">#121212</color>
-        <color name="miyo_slime_shadow">#FF8F42</color>
-        <color name="miyo_slime_body">#FFA559</color>
-        <color name="miyo_slime_core">#FFE0CC</color>
-        <color name="miyo_slime_eye">#1E1E1E</color>
-        <color name="miyo_slime_bubble">#FFCC99</color>
+        <color name="launcher_background">#171310</color>
+        <color name="miyo_splash_background">#141210</color>
         <color name="common_green">#81C784</color>
         <color name="common_yellow">#FFF176</color>
         <color name="common_red">#E57373</color>

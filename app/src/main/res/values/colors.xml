@@ -12,19 +12,14 @@
 
         <!-- Other Colors -->
 
-        <color name="blue_primary">#1976D2</color>
+        <color name="blue_primary">#FF8F42</color>
         <color name="grey">#424242</color>
         <color name="dim">#99000000</color>
         <color name="dim2">#C8FFFFFF</color>
         <color name="dim_lite">#66000000</color>
         <color name="warning">#E65100</color>
-        <color name="launcher_background">#1E1E1E</color>
-        <color name="miyo_splash_background">#121212</color>
-        <color name="miyo_slime_shadow">#FF8F42</color>
-        <color name="miyo_slime_body">#FFA559</color>
-        <color name="miyo_slime_core">#FFE0CC</color>
-        <color name="miyo_slime_eye">#1E1E1E</color>
-        <color name="miyo_slime_bubble">#FFCC99</color>
+        <color name="launcher_background">#171310</color>
+        <color name="miyo_splash_background">#141210</color>
         <color name="common_green">#388E3C</color>
         <color name="common_red">#D32F2F</color>
         <color name="common_yellow">#FBC02D</color>

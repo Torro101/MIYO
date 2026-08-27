@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ MIYO UI/UX Redesign - Color State Lists (Additive)
-  ~ Referenced by Widget.Miyo.* extended styles.
+  ~ MIYO UI/UX Redesign - Color State Lists
+  ~ Ember palette (warm mango). Referenced by Widget.Miyo.* extended styles.
 -->
 <resources>
 
@@ -12,13 +12,13 @@
         <color name="miyo_card_stroke">#14000000</color>
 
         <!-- Filter chip background (state list via drawable) - simple version for style use -->
-        <color name="miyo_filter_chip_bg">#EBEFF1</color>
-        <color name="miyo_filter_chip_text">#40484C</color>
+        <color name="miyo_filter_chip_bg">#F7EAE1</color>
+        <color name="miyo_filter_chip_text">#52443A</color>
 
         <!-- Quick tile background (very subtle, blends with surface) -->
-        <color name="miyo_quick_tile_bg">#0F006878</color>
+        <color name="miyo_quick_tile_bg">#0F8C4A00</color>
 
         <!-- Chip unselected bg real (referenced by Compact chip) -->
-        <color name="miyo_chip_unselected_bg_real">#EBEFF1</color>
+        <color name="miyo_chip_unselected_bg_real">#F7EAE1</color>
 
 </resources>
