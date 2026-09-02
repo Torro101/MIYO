@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - FAB slide-in animation (for continue-reading button)
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:duration="280"
+     android:interpolator="@android:interpolator/fast_out_slow_in">
+    <alpha
+        android:fromAlpha="0"
+        android:toAlpha="1" />
+    <scale
+        android:fromXScale="0.6"
+        android:fromYScale="0.6"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:toXScale="1"
+        android:toYScale="1" />
+    <translate
+        android:fromYDelta="25%p"
+        android:toYDelta="0" />
+</set>

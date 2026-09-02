@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - FAB slide-out animation
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+     android:duration="200"
+     android:interpolator="@android:interpolator/fast_out_linear_in">
+    <alpha
+        android:fromAlpha="1"
+        android:toAlpha="0" />
+    <scale
+        android:fromXScale="1"
+        android:fromYScale="1"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:toXScale="0.6"
+        android:toYScale="0.6" />
+    <translate
+        android:fromYDelta="0"
+        android:toYDelta="25%p" />
+</set>

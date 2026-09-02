@@ -8,7 +8,7 @@
 namespace {
 
 constexpr int RGBA_BYTES_PER_PIXEL = 4;
-constexpr int MAX_SHARPEN_PIXELS = 12000000;
+constexpr int MAX_SHARPEN_PIXELS = 24000000;
 
 uint8_t clamp_channel(float value) {
     if (value <= 0.0f) {
@@ -85,16 +85,6 @@ Java_org_koharu_miyo_core_nativeio_NativeImageEnhancer_nativeEnhanceBitmap(
     const float safe_sharpen = std::clamp(static_cast<float>(sharpen), 0.0f, 1.0f);
     const uint64_t pixel_count = static_cast<uint64_t>(width) * static_cast<uint64_t>(height);
 
-    std::vector<uint8_t> original;
-    if (safe_sharpen > 0.001f && width > 2 && height > 2 && pixel_count <= MAX_SHARPEN_PIXELS) {
-        try {
-            original.resize(static_cast<size_t>(stride) * static_cast<size_t>(height));
-            std::memcpy(original.data(), pixels, original.size());
-        } catch (...) {
-            original.clear();
-        }
-    }
-
     for (uint32_t y = 0; y < height; ++y) {
         uint8_t* row = pixels + (y * stride);
         for (uint32_t x = 0; x < width; ++x) {
@@ -103,14 +93,24 @@ Java_org_koharu_miyo_core_nativeio_NativeImageEnhancer_nativeEnhanceBitmap(
         }
     }
 
-    if (!original.empty()) {
+    std::vector<uint8_t> tone_adjusted;
+    if (safe_sharpen > 0.001f && width > 2 && height > 2 && pixel_count <= MAX_SHARPEN_PIXELS) {
+        try {
+            tone_adjusted.resize(static_cast<size_t>(stride) * static_cast<size_t>(height));
+            std::memcpy(tone_adjusted.data(), pixels, tone_adjusted.size());
+        } catch (...) {
+            tone_adjusted.clear();
+        }
+    }
+
+    if (!tone_adjusted.empty()) {
         for (uint32_t y = 1; y + 1 < height; ++y) {
             uint8_t* row = pixels + (y * stride);
             for (uint32_t x = 1; x + 1 < width; ++x) {
                 uint8_t* pixel = row + (x * RGBA_BYTES_PER_PIXEL);
                 for (int channel = 0; channel < 3; ++channel) {
                     const float base = static_cast<float>(pixel[channel]);
-                    const float sharp = sharpen_channel(original.data(), stride, x, y, channel);
+                    const float sharp = sharpen_channel(tone_adjusted.data(), stride, x, y, channel);
                     pixel[channel] = clamp_channel(base + ((sharp - base) * safe_sharpen));
                 }
             }

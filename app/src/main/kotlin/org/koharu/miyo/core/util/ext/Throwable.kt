@@ -34,6 +34,7 @@ import org.koharu.miyo.core.exceptions.UnsupportedSourceException
 import org.koharu.miyo.core.exceptions.WrapperIOException
 import org.koharu.miyo.core.exceptions.WrongPasswordException
 import org.koharu.miyo.core.exceptions.resolve.ExceptionResolver
+import org.koharu.miyo.core.parser.tachiyomi.ExtensionExecutionException
 import org.koitharu.kotatsu.parsers.ErrorMessages.FILTER_BOTH_LOCALE_GENRES_NOT_SUPPORTED
 import org.koitharu.kotatsu.parsers.ErrorMessages.FILTER_BOTH_STATES_GENRES_NOT_SUPPORTED
 import org.koitharu.kotatsu.parsers.ErrorMessages.FILTER_MULTIPLE_GENRES_NOT_SUPPORTED
@@ -130,6 +131,10 @@ private fun Throwable.getDisplayMessageOrNull(resources: Resources): String? = w
         cause?.getDisplayMessageOrNull(resources)?.let {
             resources.getString(R.string.plugin_incompatible_with_cause, it)
         } ?: resources.getString(R.string.plugin_incompatible)
+    }
+
+    is ExtensionExecutionException -> {
+        resources.getString(R.string.keiyoushi_extension_error, cause?.message ?: message)
     }
 
     is WrongPasswordException -> resources.getString(R.string.wrong_password)

@@ -25,6 +25,7 @@ import org.koharu.miyo.core.model.MangaSourceInfo
 import org.koharu.miyo.core.model.MangaSourceRegistry
 import org.koharu.miyo.core.model.PluginMangaSource
 import org.koharu.miyo.core.model.getTitle
+import org.koharu.miyo.core.model.defaultPriority
 import org.koharu.miyo.core.model.isNsfw
 import org.koharu.miyo.core.parser.external.ExternalMangaSource
 import org.koharu.miyo.core.prefs.AppSettings
@@ -321,6 +322,8 @@ class MangaSourcesRepository @Inject constructor(
 				lastUsedAt = 0,
 				isPinned = false,
 				cfState = CloudFlareHelper.PROTECTION_NOT_DETECTED,
+				isHidden = false,
+				priority = x.defaultPriority,
 			)
 		}
 		dao.insertIfAbsent(entities)
@@ -338,6 +341,18 @@ class MangaSourcesRepository @Inject constructor(
 		if (!settings.isIncognitoModeEnabled(source.isNsfw())) {
 			dao.setLastUsed(source.name, System.currentTimeMillis())
 		}
+	}
+
+	suspend fun setSourceHidden(source: MangaSource, isHidden: Boolean) {
+		dao.setHidden(source.name, isHidden)
+	}
+
+	suspend fun isSourceHidden(source: MangaSource): Boolean {
+		return dao.isHidden(source.name) ?: false
+	}
+
+	suspend fun setSourcePriority(source: MangaSource, priority: Int) {
+		dao.setPriority(source.name, priority)
 	}
 
 	private suspend fun setSourcesEnabledImpl(sources: Collection<MangaSource>, isEnabled: Boolean) {
@@ -431,6 +446,8 @@ class MangaSourcesRepository @Inject constructor(
 					mangaSource = source,
 					isEnabled = entity.isEnabled || isAllEnabled,
 					isPinned = entity.isPinned,
+					isHidden = entity.isHidden,
+					priority = entity.priority,
 				),
 			)
 		}

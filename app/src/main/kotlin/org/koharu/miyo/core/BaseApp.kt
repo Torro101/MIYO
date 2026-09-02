@@ -27,8 +27,11 @@ import org.koharu.miyo.core.db.MangaDatabase
 import org.koharu.miyo.core.os.AppValidator
 import org.koharu.miyo.core.os.RomCompat
 import org.koharu.miyo.core.model.PluginSourceKeyNormalizer
+import org.koharu.miyo.core.network.MangaHttpClient
 import org.koharu.miyo.core.parser.DynamicParserManager
 import org.koharu.miyo.core.parser.PluginFileLoader
+import org.koharu.miyo.core.parser.tachiyomi.TachiyomiInjektInitializer
+import okhttp3.OkHttpClient
 import org.koharu.miyo.filter.data.SavedFiltersRepository
 import org.koharu.miyo.core.prefs.AppSettings
 import org.koharu.miyo.core.util.ext.processLifecycleScope
@@ -68,6 +71,10 @@ open class BaseApp : Application(), Configuration.Provider {
 	lateinit var savedFiltersRepository: SavedFiltersRepository
 
 	@Inject
+	@MangaHttpClient
+	lateinit var mangaHttpClientProvider: Provider<OkHttpClient>
+
+	@Inject
 	lateinit var localMangaIndexProvider: Provider<LocalMangaIndex>
 
 	@Inject
@@ -104,6 +111,11 @@ open class BaseApp : Application(), Configuration.Provider {
 		}
 
 		processLifecycleScope.launch(Dispatchers.IO) {
+			// Seed the Injekt graph BEFORE loading APK extensions, so Tachiyomi/Keiyoushi
+			// HttpSource instances can resolve NetworkHelper/Json on their first request.
+			runCatching {
+				TachiyomiInjektInitializer.ensureInitialized(this@BaseApp, mangaHttpClientProvider.get())
+			}
 			val pluginsDir = PluginFileLoader.pluginsDir(this@BaseApp)
 			DynamicParserManager.loadParsersFromDirectory(this@BaseApp, pluginsDir)
 			withContext(Dispatchers.Default) {

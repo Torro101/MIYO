@@ -5,7 +5,7 @@
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	android:background="@drawable/list_selector"
+	android:background="@drawable/list_selector_rounded"
 	android:paddingVertical="4dp"
 	android:paddingStart="?android:listPreferredItemPaddingStart"
 	tools:ignore="RtlSymmetry">
@@ -45,6 +45,7 @@
 		android:layout_marginEnd="8dp"
 		android:singleLine="true"
 		android:textAppearance="?attr/textAppearanceBodySmall"
+		android:textColor="?attr/colorOnSurfaceVariant"
 		app:layout_constrainedWidth="true"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toStartOf="@id/imageView_tracker"

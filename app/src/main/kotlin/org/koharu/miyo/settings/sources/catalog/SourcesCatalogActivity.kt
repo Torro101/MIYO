@@ -49,7 +49,9 @@ class SourcesCatalogActivity : BaseActivity<ActivitySourcesCatalogBinding>(),
 		super.onCreate(savedInstanceState)
 		setContentView(ActivitySourcesCatalogBinding.inflate(layoutInflater))
 		setDisplayHomeAsUp(isEnabled = true, showUpAsClose = false)
-		val sourcesAdapter = SourcesCatalogAdapter(this)
+		val sourcesAdapter = SourcesCatalogAdapter(this) { source, isHidden ->
+		viewModel.toggleHidden(source, isHidden)
+	}
 		with(viewBinding.recyclerView) {
 			setHasFixedSize(true)
 			addItemDecoration(TypedListSpacingDecoration(context, false))

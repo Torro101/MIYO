@@ -55,6 +55,18 @@
 
 	</LinearLayout>
 
+	<ImageView
+		android:id="@+id/imageView_visibility"
+		android:layout_width="16dp"
+		android:layout_height="16dp"
+		android:layout_gravity="center_vertical"
+		android:layout_marginEnd="8dp"
+		android:contentDescription="@string/hide_from_main_screen"
+		android:tooltipText="@string/hide_from_main_screen"
+		android:src="@drawable/ic_eye"
+		android:visibility="visible"
+		app:tint="?android:attr/textColorSecondary" />
+
 	<View
 		android:layout_width="1dp"
 		android:layout_height="match_parent"

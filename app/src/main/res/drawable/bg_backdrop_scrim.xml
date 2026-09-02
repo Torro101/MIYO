@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Backdrop gradient scrim
+  ~ Top-to-bottom gradient for the details backdrop.
+  ~ Used as an alternative drawable for code-driven gradient views.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+       android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/miyo_scrim_top"
+        android:centerColor="@color/miyo_scrim_mid"
+        android:endColor="@color/miyo_scrim_bottom"
+        android:type="linear" />
+</shape>

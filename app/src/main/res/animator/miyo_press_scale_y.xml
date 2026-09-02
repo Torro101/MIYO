@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Press scale Y animator (paired with miyo_press_scale_x)
+-->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+                android:duration="100"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="scaleY"
+                android:valueFrom="1"
+                android:valueTo="0.97"
+                android:valueType="floatType" />

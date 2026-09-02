@@ -19,285 +19,300 @@ import java.util.LinkedList
 import java.util.WeakHashMap
 
 class WebtoonRecyclerView @JvmOverloads constructor(
-	context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+        context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : RecyclerView(context, attrs, defStyleAttr) {
 
-	private var onPageScrollListeners = LinkedList<OnWebtoonScrollListener>()
-	private val scrollDispatcher = WebtoonScrollDispatcher()
-	private val detachedViews = Collections.newSetFromMap(WeakHashMap<View, Boolean>())
-	private var isFixingScroll = false
+        private var onPageScrollListeners = LinkedList<OnWebtoonScrollListener>()
+        private val scrollDispatcher = WebtoonScrollDispatcher()
+        private val detachedViews = Collections.newSetFromMap(WeakHashMap<View, Boolean>())
+        private var isFixingScroll = false
 
-	var isPullGestureEnabled: Boolean = false
-		set(value) {
-			if (field != value) {
-				field = value
-				setEdgeEffectFactory(
-					if (value) {
-						PullEffect.Factory()
-					} else {
-						EdgeEffectFactory()
-					},
-				)
-			}
-		}
-	var pullThreshold: Float = 0.3f
-	private var pullListener: OnPullGestureListener? = null
+        var isPullGestureEnabled: Boolean = false
+                set(value) {
+                        if (field != value) {
+                                field = value
+                                setEdgeEffectFactory(
+                                        if (value) {
+                                                PullEffect.Factory()
+                                        } else {
+                                                EdgeEffectFactory()
+                                        },
+                                )
+                        }
+                }
+        var pullThreshold: Float = 0.3f
+        private var pullListener: OnPullGestureListener? = null
 
-	fun setOnPullGestureListener(listener: OnPullGestureListener?) {
-		pullListener = listener
-	}
+        fun setOnPullGestureListener(listener: OnPullGestureListener?) {
+                pullListener = listener
+        }
 
-	override fun onChildDetachedFromWindow(child: View) {
-		super.onChildDetachedFromWindow(child)
-		detachedViews.add(child)
-	}
+        override fun onChildDetachedFromWindow(child: View) {
+                super.onChildDetachedFromWindow(child)
+                detachedViews.add(child)
+        }
 
-	override fun onChildAttachedToWindow(child: View) {
-		super.onChildAttachedToWindow(child)
-		detachedViews.remove(child)
-	}
+        override fun onChildAttachedToWindow(child: View) {
+                super.onChildAttachedToWindow(child)
+                detachedViews.remove(child)
+        }
 
-	override fun startNestedScroll(axes: Int) = startNestedScroll(axes, TYPE_TOUCH)
+        override fun startNestedScroll(axes: Int) = startNestedScroll(axes, TYPE_TOUCH)
 
-	override fun startNestedScroll(axes: Int, type: Int): Boolean = super.startNestedScroll(axes, type)
+        override fun startNestedScroll(axes: Int, type: Int): Boolean = super.startNestedScroll(axes, type)
 
-	override fun dispatchNestedPreScroll(
-		dx: Int,
-		dy: Int,
-		consumed: IntArray?,
-		offsetInWindow: IntArray?
-	) = dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, TYPE_TOUCH)
+        override fun dispatchNestedPreScroll(
+                dx: Int,
+                dy: Int,
+                consumed: IntArray?,
+                offsetInWindow: IntArray?
+        ) = dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow, TYPE_TOUCH)
 
-	override fun dispatchNestedPreScroll(
-		dx: Int,
-		dy: Int,
-		consumed: IntArray?,
-		offsetInWindow: IntArray?,
-		type: Int
-	): Boolean {
-		val consumedY = consumeVerticalScroll(dy)
-		if (consumed != null) {
-			consumed[0] = 0
-			consumed[1] = consumedY
-		}
-		notifyScrollChanged(dy)
-		return consumedY != 0
-	}
+        override fun dispatchNestedPreScroll(
+                dx: Int,
+                dy: Int,
+                consumed: IntArray?,
+                offsetInWindow: IntArray?,
+                type: Int
+        ): Boolean {
+                val consumedY = consumeVerticalScroll(dy)
+                if (consumed != null) {
+                        consumed[0] = 0
+                        consumed[1] = consumedY
+                }
+                notifyScrollChanged(dy)
+                return consumedY != 0
+        }
 
-	override fun onScrolled(dx: Int, dy: Int) {
-		super.onScrolled(dx, dy)
-		if (dy != 0) {
-			updateChildrenScroll()
-		}
-	}
+        override fun onScrolled(dx: Int, dy: Int) {
+                super.onScrolled(dx, dy)
+                if (dy != 0) {
+                        updateChildrenScroll()
+                }
+        }
 
-	private fun consumeVerticalScroll(dy: Int): Int {
-		if (isEmpty()) {
-			return 0
-		}
-		when {
-			dy > 0 -> {
-				val child = getChildAt(0) as? WebtoonFrameLayout ?: return 0
-				var consumedByChild = child.dispatchVerticalScroll(dy)
-				if (consumedByChild < dy) {
-					if (childCount > 1) {
-						val nextChild = getChildAt(1) as? WebtoonFrameLayout ?: return consumedByChild
-						val unconsumed =
-							dy - consumedByChild - nextChild.top //will be consumed by scroll
-						if (unconsumed > 0) {
-							consumedByChild += nextChild.dispatchVerticalScroll(unconsumed)
-						}
-					}
-				}
-				return consumedByChild
-			}
+        private fun consumeVerticalScroll(dy: Int): Int {
+                if (isEmpty()) {
+                        return 0
+                }
+                return when {
+                        dy > 0 -> {
+                                val child = getChildAt(0) as? WebtoonFrameLayout ?: return 0
+                                var consumedByChild = child.dispatchVerticalScroll(dy)
+                                if (consumedByChild < dy) {
+                                        if (childCount > 1) {
+                                                val nextChild = getChildAt(1) as? WebtoonFrameLayout ?: return consumedByChild
+                                                // Guard against negative unconsumed when nextChild.top is
+                                                // already above the viewport (shouldn't happen but
+                                                // clamping prevents an infinite-scroll-style feedback
+                                                // loop where unconsumed < 0 causes dispatchVerticalScroll
+                                                // to scroll the next child backwards).
+                                                val unconsumed = (dy - consumedByChild - nextChild.top).coerceAtLeast(0)
+                                                if (unconsumed > 0) {
+                                                        consumedByChild += nextChild.dispatchVerticalScroll(unconsumed)
+                                                }
+                                        }
+                                }
+                                // Never report more consumed than the original delta — the
+                                // parent scroll logic uses the return value to decide how much
+                                // to scroll the RecyclerView itself, and over-reporting causes
+                                // the RecyclerView to not scroll when it should (page appears
+                                // stuck at the bottom of a child).
+                                consumedByChild.coerceAtMost(dy)
+                        }
 
-			dy < 0 -> {
-				val child = getChildAt(childCount - 1) as? WebtoonFrameLayout ?: return 0
-				var consumedByChild = child.dispatchVerticalScroll(dy)
-				if (consumedByChild > dy) {
-					if (childCount > 1) {
-						val nextChild = getChildAt(childCount - 2) as? WebtoonFrameLayout
-							?: return consumedByChild
-						val unconsumed =
-							dy - consumedByChild + (height - nextChild.bottom) //will be consumed by scroll
-						if (unconsumed < 0) {
-							consumedByChild += nextChild.dispatchVerticalScroll(unconsumed)
-						}
-					}
-				}
-				return consumedByChild
-			}
-		}
-		return 0
-	}
+                        dy < 0 -> {
+                                val child = getChildAt(childCount - 1) as? WebtoonFrameLayout ?: return 0
+                                var consumedByChild = child.dispatchVerticalScroll(dy)
+                                if (consumedByChild > dy) {
+                                        if (childCount > 1) {
+                                                val nextChild = getChildAt(childCount - 2) as? WebtoonFrameLayout
+                                                        ?: return consumedByChild
+                                                // Guard: unconsumed must stay <= 0 (negative scroll up).
+                                                val unconsumed = (dy - consumedByChild + (height - nextChild.bottom)).coerceAtMost(0)
+                                                if (unconsumed < 0) {
+                                                        consumedByChild += nextChild.dispatchVerticalScroll(unconsumed)
+                                                }
+                                        }
+                                }
+                                // Never report more consumed than |dy| (and keep the sign).
+                                // Without this clamp, a child that returns a large positive
+                                // consumed for a negative dy would make the parent think the
+                                // scroll was fully handled and the RecyclerView would not
+                                // scroll, leaving the user stuck.
+                                consumedByChild.coerceIn(dy, 0)
+                        }
 
-	fun addOnPageScrollListener(listener: OnWebtoonScrollListener) {
-		onPageScrollListeners.add(listener)
-	}
+                        else -> 0
+                }
+        }
 
-	fun removeOnPageScrollListener(listener: OnWebtoonScrollListener) {
-		onPageScrollListeners.remove(listener)
-	}
+        fun addOnPageScrollListener(listener: OnWebtoonScrollListener) {
+                onPageScrollListeners.add(listener)
+        }
 
-	private fun notifyScrollChanged(dy: Int) {
-		val listeners = onPageScrollListeners
-		if (listeners.isEmpty()) {
-			return
-		}
-		scrollDispatcher.dispatchScroll(this, dy)
-	}
+        fun removeOnPageScrollListener(listener: OnWebtoonScrollListener) {
+                onPageScrollListeners.remove(listener)
+        }
 
-	fun relayoutChildren() {
-		forEach { child ->
-			(child as? WebtoonFrameLayout)?.target?.requestLayout()
-		}
-		detachedViews.forEach { child ->
-			(child as? WebtoonFrameLayout)?.target?.requestLayout()
-		}
-	}
+        private fun notifyScrollChanged(dy: Int) {
+                val listeners = onPageScrollListeners
+                if (listeners.isEmpty()) {
+                        return
+                }
+                scrollDispatcher.dispatchScroll(this, dy)
+        }
 
-	fun updateChildrenScroll() {
-		if (isFixingScroll) {
-			return
-		}
-		isFixingScroll = true
-		try {
-			for (child in this) {
-				val ssiv = (child as? WebtoonFrameLayout)?.target ?: continue
-				if (adjustScroll(child, ssiv)) {
-					break
-				}
-			}
-		} finally {
-			// If adjustScroll() throws, the flag must still be reset, otherwise
-			// scroll fixing is permanently disabled until the reader is reopened.
-			isFixingScroll = false
-		}
-	}
+        fun relayoutChildren() {
+                forEach { child ->
+                        (child as? WebtoonFrameLayout)?.target?.requestLayout()
+                }
+                detachedViews.forEach { child ->
+                        (child as? WebtoonFrameLayout)?.target?.requestLayout()
+                }
+        }
 
-	private fun adjustScroll(child: View, ssiv: WebtoonImageView): Boolean {
-		if (!ssiv.isReady) {
-			return false
-		}
-		return when {
-			child.bottom < height && ssiv.getScroll() < ssiv.getScrollRange() -> {
-				val distance = minOf(height - child.bottom, ssiv.getScrollRange() - ssiv.getScroll())
-				ssiv.scrollBy(distance)
-				true
-			}
+        fun updateChildrenScroll() {
+                if (isFixingScroll) {
+                        return
+                }
+                isFixingScroll = true
+                try {
+                        for (child in this) {
+                                val ssiv = (child as? WebtoonFrameLayout)?.target ?: continue
+                                if (adjustScroll(child, ssiv)) {
+                                        break
+                                }
+                        }
+                } finally {
+                        // If adjustScroll() throws, the flag must still be reset, otherwise
+                        // scroll fixing is permanently disabled until the reader is reopened.
+                        isFixingScroll = false
+                }
+        }
 
-			child.top > 0 && ssiv.getScroll() > 0 -> {
-				val distance = minOf(child.top, ssiv.getScroll())
-				ssiv.scrollBy(-distance)
-				true
-			}
+        private fun adjustScroll(child: View, ssiv: WebtoonImageView): Boolean {
+                if (!ssiv.isReady) {
+                        return false
+                }
+                return when {
+                        child.bottom < height && ssiv.getScroll() < ssiv.getScrollRange() -> {
+                                val distance = minOf(height - child.bottom, ssiv.getScrollRange() - ssiv.getScroll())
+                                ssiv.scrollBy(distance)
+                                true
+                        }
 
-			else -> false
-		}
-	}
+                        child.top > 0 && ssiv.getScroll() > 0 -> {
+                                val distance = minOf(child.top, ssiv.getScroll())
+                                ssiv.scrollBy(-distance)
+                                true
+                        }
 
-	private class WebtoonScrollDispatcher {
+                        else -> false
+                }
+        }
 
-		private var firstPos = NO_POSITION
-		private var lastPos = NO_POSITION
+        private class WebtoonScrollDispatcher {
 
-		fun dispatchScroll(rv: WebtoonRecyclerView, dy: Int) {
-			val lm = rv.layoutManager as? LinearLayoutManager
-			if (lm == null) {
-				firstPos = NO_POSITION
-				lastPos = NO_POSITION
-				return
-			}
-			val newFirstPos = lm.findFirstVisibleItemPosition()
-			val newLastPos = lm.findLastVisibleItemPosition()
-			if (newFirstPos != firstPos || newLastPos != lastPos) {
-				firstPos = newFirstPos
-				lastPos = newLastPos
-				if (newFirstPos != NO_POSITION && newLastPos != NO_POSITION) {
-					rv.onPageScrollListeners.forEach { it.onScrollChanged(rv, dy, newFirstPos, newLastPos) }
-				}
-			}
-		}
-	}
+                private var firstPos = NO_POSITION
+                private var lastPos = NO_POSITION
 
-	private class PullEffect(
-		view: RecyclerView,
-		private val direction: Int,
-		private val pullThreshold: Float,
-		private val pullListener: OnPullGestureListener,
-	) : EdgeEffect(view.context) {
+                fun dispatchScroll(rv: WebtoonRecyclerView, dy: Int) {
+                        val lm = rv.layoutManager as? LinearLayoutManager
+                        if (lm == null) {
+                                firstPos = NO_POSITION
+                                lastPos = NO_POSITION
+                                return
+                        }
+                        val newFirstPos = lm.findFirstVisibleItemPosition()
+                        val newLastPos = lm.findLastVisibleItemPosition()
+                        if (newFirstPos != firstPos || newLastPos != lastPos) {
+                                firstPos = newFirstPos
+                                lastPos = newLastPos
+                                if (newFirstPos != NO_POSITION && newLastPos != NO_POSITION) {
+                                        rv.onPageScrollListeners.forEach { it.onScrollChanged(rv, dy, newFirstPos, newLastPos) }
+                                }
+                        }
+                }
+        }
 
-		private var pullProgressTop: Float = 0f
-		private var pullProgressBottom: Float = 0f
+        private class PullEffect(
+                view: RecyclerView,
+                private val direction: Int,
+                private val pullThreshold: Float,
+                private val pullListener: OnPullGestureListener,
+        ) : EdgeEffect(view.context) {
 
-		override fun onPull(deltaDistance: Float) {
-			val sign = if (direction == DIRECTION_TOP) 1f else if (direction == DIRECTION_BOTTOM) 1f else 0f
-			if (sign != 0f) onPull(deltaDistance, 0.5f)
-		}
+                private var pullProgressTop: Float = 0f
+                private var pullProgressBottom: Float = 0f
 
-		override fun onPull(deltaDistance: Float, displacement: Float) {
-			if (direction == DIRECTION_TOP) {
-				pullProgressTop = (pullProgressTop + deltaDistance).coerceAtLeast(0f)
-				pullListener.onPullProgressTop(pullProgressTop / pullThreshold)
-			} else if (direction == DIRECTION_BOTTOM) {
-				pullProgressBottom = (pullProgressBottom + deltaDistance).coerceAtLeast(0f)
-				pullListener.onPullProgressBottom(pullProgressBottom / pullThreshold)
-			}
-		}
+                override fun onPull(deltaDistance: Float) {
+                        val sign = if (direction == DIRECTION_TOP) 1f else if (direction == DIRECTION_BOTTOM) 1f else 0f
+                        if (sign != 0f) onPull(deltaDistance, 0.5f)
+                }
 
-		override fun onRelease() {
-			var triggered = false
-			if (direction == DIRECTION_TOP) {
-				if (pullProgressTop >= pullThreshold) {
-					pullListener.onPullTriggeredTop()
-					triggered = true
-				}
-				pullProgressTop = 0f
-				pullListener.onPullProgressTop(0f)
-			} else if (direction == DIRECTION_BOTTOM) {
-				if (pullProgressBottom >= pullThreshold) {
-					pullListener.onPullTriggeredBottom()
-					triggered = true
-				}
-				pullProgressBottom = 0f
-				pullListener.onPullProgressBottom(0f)
-			}
-			if (!triggered) {
-				pullListener.onPullCancelled()
-			}
-		}
+                override fun onPull(deltaDistance: Float, displacement: Float) {
+                        if (direction == DIRECTION_TOP) {
+                                pullProgressTop = (pullProgressTop + deltaDistance).coerceAtLeast(0f)
+                                pullListener.onPullProgressTop(pullProgressTop / pullThreshold)
+                        } else if (direction == DIRECTION_BOTTOM) {
+                                pullProgressBottom = (pullProgressBottom + deltaDistance).coerceAtLeast(0f)
+                                pullListener.onPullProgressBottom(pullProgressBottom / pullThreshold)
+                        }
+                }
 
-		override fun draw(canvas: Canvas?): Boolean = false
+                override fun onRelease() {
+                        var triggered = false
+                        if (direction == DIRECTION_TOP) {
+                                if (pullProgressTop >= pullThreshold) {
+                                        pullListener.onPullTriggeredTop()
+                                        triggered = true
+                                }
+                                pullProgressTop = 0f
+                                pullListener.onPullProgressTop(0f)
+                        } else if (direction == DIRECTION_BOTTOM) {
+                                if (pullProgressBottom >= pullThreshold) {
+                                        pullListener.onPullTriggeredBottom()
+                                        triggered = true
+                                }
+                                pullProgressBottom = 0f
+                                pullListener.onPullProgressBottom(0f)
+                        }
+                        if (!triggered) {
+                                pullListener.onPullCancelled()
+                        }
+                }
 
-		class Factory : EdgeEffectFactory() {
+                override fun draw(canvas: Canvas?): Boolean = false
 
-			override fun createEdgeEffect(view: RecyclerView, direction: Int): EdgeEffect {
-				val pullListener = (view as? WebtoonRecyclerView)?.pullListener
-				return if (pullListener != null) {
-					PullEffect(view, direction, view.pullThreshold, pullListener)
-				} else {
-					super.createEdgeEffect(view, direction)
-				}
-			}
-		}
-	}
+                class Factory : EdgeEffectFactory() {
 
-	interface OnWebtoonScrollListener {
+                        override fun createEdgeEffect(view: RecyclerView, direction: Int): EdgeEffect {
+                                val pullListener = (view as? WebtoonRecyclerView)?.pullListener
+                                return if (pullListener != null) {
+                                        PullEffect(view, direction, view.pullThreshold, pullListener)
+                                } else {
+                                        super.createEdgeEffect(view, direction)
+                                }
+                        }
+                }
+        }
 
-		fun onScrollChanged(
-			recyclerView: WebtoonRecyclerView,
-			dy: Int,
-			firstVisiblePosition: Int,
-			lastVisiblePosition: Int,
-		)
-	}
+        interface OnWebtoonScrollListener {
 
-	interface OnPullGestureListener {
-		fun onPullProgressTop(progress: Float)
-		fun onPullProgressBottom(progress: Float)
-		fun onPullTriggeredTop()
-		fun onPullTriggeredBottom()
-		fun onPullCancelled()
-	}
+                fun onScrollChanged(
+                        recyclerView: WebtoonRecyclerView,
+                        dy: Int,
+                        firstVisiblePosition: Int,
+                        lastVisiblePosition: Int,
+                )
+        }
+
+        interface OnPullGestureListener {
+                fun onPullProgressTop(progress: Float)
+                fun onPullProgressBottom(progress: Float)
+                fun onPullTriggeredTop()
+                fun onPullTriggeredBottom()
+                fun onPullCancelled()
+        }
 }

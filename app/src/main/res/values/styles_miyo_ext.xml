@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO "Ember" design system — extended shapes, text appearances & widgets.
+  ~ These styles ARE used by production layouts (details, lists, empty states).
+-->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+        <!-- ==== ShapeAppearance overlays ==== -->
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.Large" parent="">
+                <item name="cornerSize">16dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.ExtraLarge" parent="">
+                <item name="cornerSize">20dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Cover.Pill" parent="">
+                <item name="cornerFamily">rounded</item>
+                <item name="cornerSize">50%</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card" parent="">
+                <item name="cornerSize">12dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card.Large" parent="">
+                <item name="cornerSize">16dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Card.ExtraLarge" parent="">
+                <item name="cornerSize">20dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Sheet" parent="">
+                <item name="cornerSize">28dp</item>
+        </style>
+
+        <style name="ShapeAppearanceOverlay.Miyo.Pill" parent="">
+                <item name="cornerFamily">rounded</item>
+                <item name="cornerSize">50%</item>
+        </style>
+
+        <!-- ==== TextAppearances ==== -->
+
+        <style name="TextAppearance.Miyo.SectionHeader" parent="TextAppearance.Material3.TitleSmall">
+                <item name="android:letterSpacing">0.08</item>
+                <item name="android:textAllCaps">true</item>
+                <item name="android:textSize">12sp</item>
+                <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        </style>
+
+        <!-- ==== Widget styles ==== -->
+
+        <!-- Pill-shaped primary action button -->
+        <style name="Widget.Miyo.Button.PillPrimary" parent="Widget.Material3.Button">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Pill</item>
+                <item name="android:minHeight">56dp</item>
+                <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+                <item name="iconSize">22dp</item>
+                <item name="iconTint">?attr/colorOnPrimary</item>
+                <item name="android:paddingStart">24dp</item>
+                <item name="android:paddingEnd">24dp</item>
+        </style>
+
+        <!-- Pill-shaped tonal button (retry / secondary actions) -->
+        <style name="Widget.Miyo.Button.PillTonal" parent="Widget.Material3.Button.TonalButton">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Pill</item>
+                <item name="android:minHeight">48dp</item>
+                <item name="iconSize">20dp</item>
+        </style>
+
+        <!-- Icon-only circular button (top app bar actions) -->
+        <style name="Widget.Miyo.Button.IconCircle" parent="Widget.Material3.Button.IconButton">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Circle</item>
+                <item name="android:minWidth">48dp</item>
+                <item name="android:minHeight">48dp</item>
+        </style>
+
+        <!-- Filled tonal icon button (toggleable, view-mode switches) -->
+        <style name="Widget.Miyo.Button.IconToggle" parent="Widget.Material3.Button.IconButton.Filled.Tonal">
+                <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Miyo.Circle</item>
+                <item name="android:minWidth">40dp</item>
+                <item name="android:minHeight">40dp</item>
+                <item name="iconSize">20dp</item>
+        </style>
+
+        <!-- Thin, brand-tinted progress indicator -->
+        <style name="Widget.Miyo.LinearProgressIndicator.Thin" parent="Widget.Material3.LinearProgressIndicator">
+                <item name="indicatorColor">?attr/colorPrimary</item>
+                <item name="trackColor">@color/miyo_progress_track</item>
+                <item name="trackThickness">3dp</item>
+                <item name="trackCornerRadius">@dimen/mtrl_progress_indicator_full_rounded_corner_radius</item>
+        </style>
+
+        <!-- Circular progress with brand tint -->
+        <style name="Widget.Miyo.CircularProgressIndicator.Brand" parent="Widget.Material3.CircularProgressIndicator">
+                <item name="indicatorColor">?attr/colorPrimary</item>
+                <item name="trackColor">@color/miyo_progress_track</item>
+                <item name="trackThickness">3dp</item>
+                <item name="trackCornerRadius">@dimen/mtrl_progress_indicator_full_rounded_corner_radius</item>
+        </style>
+
+        <!-- Subtle divider -->
+        <style name="Widget.Miyo.Divider" parent="Widget.Material3.MaterialDivider">
+                <item name="dividerColor">@color/miyo_divider</item>
+                <item name="android:layout_height">1dp</item>
+        </style>
+
+</resources>

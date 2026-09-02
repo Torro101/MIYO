@@ -160,6 +160,19 @@ abstract class MangaSourcesDao {
 		},
 	)
 
+
+	@Query("UPDATE sources SET is_hidden = :isHidden WHERE source = :source")
+	abstract suspend fun setHidden(source: String, isHidden: Boolean)
+
+	@Query("SELECT is_hidden FROM sources WHERE source = :source LIMIT 1")
+	abstract suspend fun isHidden(source: String): Boolean?
+
+	@Query("UPDATE sources SET priority = :priority WHERE source = :source")
+	abstract suspend fun setPriority(source: String, priority: Int)
+
+	@Query("SELECT priority FROM sources WHERE source = :source LIMIT 1")
+	abstract suspend fun getPriority(source: String): Int?
+
 	private fun getOrderBy(order: SourcesSortOrder) = when (order) {
 		SourcesSortOrder.ALPHABETIC -> "source ASC"
 		SourcesSortOrder.POPULARITY -> "(SELECT COUNT(*) FROM manga WHERE source = sources.source) DESC"

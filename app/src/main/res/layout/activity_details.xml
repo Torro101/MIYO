@@ -92,7 +92,7 @@
 						app:layout_constraintStart_toStartOf="parent"
 						app:layout_constraintTop_toTopOf="parent"
 						app:layout_constraintWidth_percent="0.3"
-						app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Miyo.Cover"
+						app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Miyo.Cover.ExtraLarge"
 						app:useExistingDrawable="true"
 						tools:background="@tools:sample/backgrounds/scenic[5]"
 						tools:ignore="ContentDescription,UnusedAttribute" />
@@ -187,7 +187,7 @@
 						android:padding="@dimen/grid_spacing"
 						android:singleLine="true"
 						android:text="@string/description"
-						android:textAppearance="?textAppearanceTitleSmall"
+						android:textAppearance="@style/TextAppearance.Miyo.SectionHeader"
 						app:layout_constraintEnd_toStartOf="@id/button_description_more"
 						app:layout_constraintStart_toStartOf="parent"
 						app:layout_constraintTop_toBottomOf="@id/textView_progress_label" />
@@ -243,7 +243,7 @@
 						android:padding="@dimen/grid_spacing"
 						android:singleLine="true"
 						android:text="@string/tracking"
-						android:textAppearance="?textAppearanceTitleSmall"
+						android:textAppearance="@style/TextAppearance.Miyo.SectionHeader"
 						app:layout_constraintEnd_toStartOf="@id/button_scrobbling_more"
 						app:layout_constraintStart_toStartOf="parent"
 						app:layout_constraintTop_toBottomOf="@id/chips_tags" />
@@ -297,7 +297,7 @@
 						android:padding="@dimen/grid_spacing"
 						android:singleLine="true"
 						android:text="@string/related_manga"
-						android:textAppearance="?textAppearanceTitleSmall"
+						android:textAppearance="@style/TextAppearance.Miyo.SectionHeader"
 						app:layout_constraintEnd_toStartOf="@id/button_related_more"
 						app:layout_constraintStart_toStartOf="parent"
 						app:layout_constraintTop_toBottomOf="@id/recyclerView_scrobbling" />
@@ -321,8 +321,8 @@
 						android:clipToPadding="false"
 						android:nestedScrollingEnabled="false"
 						android:orientation="horizontal"
-						android:paddingStart="12dp"
-						android:paddingEnd="12dp"
+						android:paddingStart="@dimen/miyo_space_l"
+						android:paddingEnd="@dimen/miyo_space_l"
 						app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
 						app:layout_constraintEnd_toEndOf="parent"
 						app:layout_constraintStart_toStartOf="parent"

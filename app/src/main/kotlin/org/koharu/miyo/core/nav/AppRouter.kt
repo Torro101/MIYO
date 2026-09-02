@@ -210,6 +210,7 @@ class AppRouter private constructor(
 
     fun openSourcesCatalog() = startActivity(SourcesCatalogActivity::class.java)
 
+
     fun openDownloads() = startActivity(DownloadsActivity::class.java)
 
     fun openDirectoriesSettings() = startActivity(MangaDirectoriesActivity::class.java)

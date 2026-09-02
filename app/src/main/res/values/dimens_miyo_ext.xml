@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Extended Dimensions
+  ~ Additive-only: supplements values/dimens.xml without modifying existing tokens.
+-->
+<resources>
+
+        <!-- Refined corner radii (alongside existing m3_card_corner=12dp) -->
+        <dimen name="miyo_corner_xs">4dp</dimen>
+        <dimen name="miyo_corner_s">8dp</dimen>
+        <dimen name="miyo_corner_m">12dp</dimen>
+        <dimen name="miyo_corner_l">16dp</dimen>
+        <dimen name="miyo_corner_xl">20dp</dimen>
+        <dimen name="miyo_corner_xxl">28dp</dimen>
+        <dimen name="miyo_corner_pill">999dp</dimen>
+
+        <!-- Refined elevation tokens (subtle, material-inspired) -->
+        <dimen name="miyo_elevation_0">0dp</dimen>
+        <dimen name="miyo_elevation_1">1dp</dimen>
+        <dimen name="miyo_elevation_2">3dp</dimen>
+        <dimen name="miyo_elevation_3">6dp</dimen>
+        <dimen name="miyo_elevation_4">8dp</dimen>
+        <dimen name="miyo_elevation_5">12dp</dimen>
+
+        <!-- Refined spacing scale (alongside existing margin_normal/small) -->
+        <dimen name="miyo_space_xs">4dp</dimen>
+        <dimen name="miyo_space_s">8dp</dimen>
+        <dimen name="miyo_space_m">12dp</dimen>
+        <dimen name="miyo_space_l">16dp</dimen>
+        <dimen name="miyo_space_xl">24dp</dimen>
+        <dimen name="miyo_space_xxl">32dp</dimen>
+
+        <!-- Section header height (for new section_header layout) -->
+        <dimen name="miyo_section_header_height">48dp</dimen>
+
+        <!-- Quick action tile size (for home screen quick actions) -->
+        <dimen name="miyo_quick_tile_height">88dp</dimen>
+        <dimen name="miyo_quick_tile_icon">28dp</dimen>
+
+        <!-- Info card dimensions (for stats cards in details) -->
+        <dimen name="miyo_info_card_height">72dp</dimen>
+        <dimen name="miyo_info_card_icon">24dp</dimen>
+
+        <!-- Bottom nav indicator pill -->
+        <dimen name="miyo_nav_pill_height">32dp</dimen>
+        <dimen name="miyo_nav_pill_width">64dp</dimen>
+
+        <!-- Stagger threshold for entrance animations -->
+        <dimen name="miyo_stagger_translation">24dp</dimen>
+
+        <!-- Filter chip height (slightly taller than M3 default for better touch) -->
+        <dimen name="miyo_filter_chip_height">40dp</dimen>
+
+        <!-- Reader page-gap (refined from webtoon_pages_gap=24dp) -->
+        <dimen name="miyo_webtoon_pages_gap_refined">16dp</dimen>
+
+        <!-- Card border width (very subtle, for elevated cards) -->
+        <dimen name="miyo_card_border">1dp</dimen>
+
+        <!-- New badge offset variants -->
+        <dimen name="miyo_badge_offset_lg">16dp</dimen>
+
+</resources>

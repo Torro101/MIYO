@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Refined list selector (16dp corners, more generous insets)
+  ~ Used by item_manga_grid_v2.xml and similar new layouts.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+        android:color="@color/selector_overlay">
+    <item>
+        <selector>
+            <item
+                android:bottom="2dp"
+                android:left="2dp"
+                android:right="2dp"
+                android:state_selected="true"
+                android:top="2dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="@dimen/miyo_corner_m" />
+                    <solid android:color="@color/selector_overlay" />
+                </shape>
+            </item>
+            <item
+                android:bottom="2dp"
+                android:left="2dp"
+                android:right="2dp"
+                android:state_activated="true"
+                android:top="2dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="@dimen/miyo_corner_m" />
+                    <solid android:color="@color/selector_overlay" />
+                </shape>
+            </item>
+            <item
+                android:bottom="2dp"
+                android:left="2dp"
+                android:right="2dp"
+                android:state_hovered="true"
+                android:top="2dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="@dimen/miyo_corner_m" />
+                    <solid android:color="@color/selector_overlay" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+    <item
+        android:id="@android:id/mask"
+        android:bottom="2dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_m" />
+            <solid android:color="@color/selector_overlay" />
+        </shape>
+    </item>
+</ripple>

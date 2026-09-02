@@ -1,5 +1,6 @@
 package org.koharu.miyo.alternatives.ui
 
+import org.koharu.miyo.alternatives.domain.AlternativeScore
 import org.koharu.miyo.core.model.chaptersCount
 import org.koharu.miyo.list.ui.model.ListModel
 import org.koharu.miyo.list.ui.model.MangaGridModel
@@ -8,6 +9,7 @@ import org.koitharu.kotatsu.parsers.model.Manga
 data class MangaAlternativeModel(
 	val mangaModel: MangaGridModel,
 	private val referenceChapters: Int,
+	val score: AlternativeScore,
 ) : ListModel {
 
 	val manga: Manga

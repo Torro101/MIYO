@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ MIYO UI/UX Redesign - Filled card background (no elevation)
+  ~ surfaceContainer fill + subtle stroke + 16dp corners
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_l" />
+            <solid android:color="?attr/colorSurfaceContainer" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/miyo_corner_l" />
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="@dimen/miyo_card_border"
+                android:color="@color/miyo_card_stroke" />
+        </shape>
+    </item>
+</layer-list>
