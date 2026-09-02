@@ -2,9 +2,9 @@ name: Android Instrumented Tests
 
 on:
   push:
-    branches: [ main, devel ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, devel ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:

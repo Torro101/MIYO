@@ -2,7 +2,7 @@ name: Release Dry Run
 
 on:
   pull_request:
-    branches: [ main, devel ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:

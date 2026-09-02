@@ -2,7 +2,7 @@ name: Dependency Review
 
 on:
   pull_request:
-    branches: [ main, devel ]
+    branches: [ main ]
     paths:
       - "**/*.gradle"
       - "**/*.gradle.kts"
